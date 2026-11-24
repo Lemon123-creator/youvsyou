@@ -1,1 +1,1035 @@
+<!DOCTYPE html>
+<html lang="pl" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouVsYou — Twój Tracker, Kalendarz i Asystent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            obsidian: '#090b10',
+            surface: '#111520',
+            surface2: '#171c2b',
+            accent: '#10b981',
+            indigoGlow: '#6366f1'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background-color: #090b10;
+      color: #f1f5f9;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+    }
+    .ambient-bg {
+      background:
+        radial-gradient(circle at 12% 12%, rgba(16, 185, 129, 0.08), transparent 36%),
+        radial-gradient(circle at 88% 18%, rgba(99, 102, 241, 0.09), transparent 40%),
+        radial-gradient(circle at 50% 95%, rgba(14, 165, 233, 0.05), transparent 45%),
+        #090b10;
+    }
+    .glass-card {
+      background: rgba(17, 21, 32, 0.78);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.65);
+    }
+    .glass-card-hover {
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    .glass-card-hover:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 16px 38px -12px rgba(0, 0, 0, 0.8);
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(22px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .slide-step {
+      animation: slideInRight 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes waveShift {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .wave-anim {
+      animation: waveShift 5s linear infinite;
+    }
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: #0c0f17; }
+    ::-webkit-scrollbar-thumb { background: #262e42; border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #36415c; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { opacity: 0.4; }
+  </style>
+</head>
+<body class="ambient-bg min-h-screen text-slate-100 antialiased selection:bg-emerald-500/30 selection:text-emerald-200">
+  <div id="app"></div>
 
+  <script>
+    // =========================================================================
+    // 1. STAŁE, POMOCNIKI DAT I FORMATOWANIA
+    // =========================================================================
+    const STORAGE_KEY = 'youvsyou_tracker_v2';
+    const BACKUP_NAME_KEY = 'YOUVSYOU_SESSION_BACKUP_V2';
+
+    const USER_AVATARS = [
+      {
+        id: 'cyber_fighter',
+        name: 'Cyber Fighter',
+        tag: 'You vs You',
+        svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="ua1" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#10b981"/><stop offset="100%" stop-color="#059669"/>
+            </linearGradient>
+          </defs>
+          <rect width="64" height="64" rx="18" fill="#0f172a"/>
+          <circle cx="32" cy="25" r="11" fill="url(#ua1)"/>
+          <path d="M14 55C14 44.5 22 38 32 38C42 38 50 44.5 50 55" fill="url(#ua1)" fill-opacity="0.9"/>
+          <path d="M23 24H41" stroke="#062e22" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="28" cy="24" r="1.5" fill="#ecfdf5"/>
+          <circle cx="36" cy="24" r="1.5" fill="#ecfdf5"/>
+        </svg>`
+      },
+      {
+        id: 'gentleman_stache',
+        name: 'Wąsaty Dżentelmen',
+        tag: 'Klasa & Styl',
+        svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="ua2" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/>
+            </linearGradient>
+          </defs>
+          <rect width="64" height="64" rx="18" fill="#181512"/>
+          <circle cx="32" cy="26" r="10.5" fill="#fde68a"/>
+          <path d="M15 55C15 45 22.5 39 32 39C41.5 39 49 45 49 55" fill="url(#ua2)"/>
+          <path d="M21 21C24 15 40 15 43 21" stroke="url(#ua2)" stroke-width="3.2" stroke-linecap="round"/>
+          <path d="M25 30.5C27.5 28.5 30.5 29 32 30.5C33.5 29 36.5 28.5 39 30.5" stroke="#451a03" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>`
+      },
+      {
+        id: 'lifting_pro',
+        name: 'Lifting Pro',
+        tag: 'Siła & Forma',
+        svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="ua3" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#8b5cf6"/>
+            </linearGradient>
+          </defs>
+          <rect width="64" height="64" rx="18" fill="#111326"/>
+          <circle cx="32" cy="23" r="9.5" fill="#e0e7ff"/>
+          <path d="M11 55C12 43 20.5 37 32 37C43.5 37 52 43 53 55" fill="url(#ua3)"/>
+          <rect x="14" y="45" width="36" height="4" rx="2" fill="#0f172a" fill-opacity="0.45"/>
+          <circle cx="15" cy="47" r="4.5" fill="#c7d2fe"/>
+          <circle cx="49" cy="47" r="4.5" fill="#c7d2fe"/>
+        </svg>`
+      },
+      {
+        id: 'night_focus',
+        name: 'Nocny Fokus',
+        tag: 'Dyscyplina',
+        svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="ua4" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#3b82f6"/>
+            </linearGradient>
+          </defs>
+          <rect width="64" height="64" rx="18" fill="#091322"/>
+          <circle cx="32" cy="25" r="10" fill="url(#ua4)"/>
+          <path d="M15 55C16 44.5 23 39 32 39C41 39 48 44.5 49 55" fill="#1e293b"/>
+          <path d="M23 40L32 48L41 40" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`
+      },
+      {
+        id: 'emerald_leader',
+        name: 'Szmaragdowy Lider',
+        tag: 'Progres',
+        svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="ua5" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#0ea5e9"/>
+            </linearGradient>
+          </defs>
+          <rect width="64" height="64" rx="18" fill="#0a1919"/>
+          <polygon points="32,12 46,24 41,42 23,42 18,24" fill="url(#ua5)" fill-opacity="0.25" stroke="url(#ua5)" stroke-width="2"/>
+          <circle cx="32" cy="26" r="7.5" fill="#f8fafc"/>
+          <path d="M17 54C18.5 45.5 24.5 41 32 41C39.5 41 45.5 45.5 47 54" fill="url(#ua5)"/>
+        </svg>`
+      },
+      {
+        id: 'minimal_arch',
+        name: 'Minimalista',
+        tag: 'Czysty Plan',
+        svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="64" height="64" rx="18" fill="#171b26"/>
+          <circle cx="32" cy="25" r="9.5" fill="#cbd5e1"/>
+          <path d="M16 54C17 44.5 23.5 39.5 32 39.5C40.5 39.5 47 44.5 48 54" fill="#475569"/>
+          <circle cx="46" cy="18" r="4" fill="#10b981"/>
+        </svg>`
+      }
+    ];
+
+    const AI_AVATARS = [
+      {
+        id: 'core_ai',
+        name: 'Core AI',
+        tag: 'Asystent YouVsYou',
+        svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="ai1" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#10b981"/><stop offset="100%" stop-color="#6366f1"/>
+            </linearGradient>
+          </defs>
+          <rect width="64" height="64" rx="18" fill="#0d1220"/>
+          <rect x="15" y="18" width="34" height="28" rx="11" fill="url(#ai1)" fill-opacity="0.2" stroke="url(#ai1)" stroke-width="2.2"/>
+          <circle cx="26" cy="32" r="3.4" fill="#34d399"/>
+          <circle cx="38" cy="32" r="3.4" fill="#818cf8"/>
+          <path d="M32 10V18" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="32" cy="9" r="3" fill="#10b981"/>
+        </svg>`
+      },
+      {
+        id: 'cyber_bot',
+        name: 'Cyber Bot',
+        tag: 'Szybka Analiza',
+        svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="ai2" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#ec4899"/>
+            </linearGradient>
+          </defs>
+          <rect width="64" height="64" rx="18" fill="#150f24"/>
+          <rect x="14" y="19" width="36" height="26" rx="8" fill="url(#ai2)"/>
+          <rect x="20" y="27" width="24" height="9" rx="4.5" fill="#090b10"/>
+          <circle cx="26" cy="31.5" r="2" fill="#f472b6"/>
+          <circle cx="38" cy="31.5" r="2" fill="#c084fc"/>
+        </svg>`
+      },
+      {
+        id: 'neon_core',
+        name: 'Neonowy Rdzeń',
+        tag: 'Inteligentny Log',
+        svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="ai3" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#10b981"/>
+            </linearGradient>
+          </defs>
+          <rect width="64" height="64" rx="18" fill="#07181d"/>
+          <circle cx="32" cy="32" r="15" stroke="url(#ai3)" stroke-width="2.5" stroke-dasharray="6 4"/>
+          <circle cx="32" cy="32" r="7" fill="url(#ai3)"/>
+        </svg>`
+      },
+      {
+        id: 'quantum_guide',
+        name: 'Kwantowy Przewodnik',
+        tag: 'Planowanie',
+        svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="ai4" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#a78bfa"/>
+            </linearGradient>
+          </defs>
+          <rect width="64" height="64" rx="18" fill="#0e1426"/>
+          <path d="M32 13L47 32L32 51L17 32L32 13Z" stroke="url(#ai4)" stroke-width="2.4" fill="url(#ai4)" fill-opacity="0.14"/>
+          <circle cx="32" cy="32" r="4.5" fill="#e0e7ff"/>
+        </svg>`
+      }
+    ];
+
+    function getUserAvatar(id) {
+      return USER_AVATARS.find(a => a.id === id) || USER_AVATARS[0];
+    }
+    function getAiAvatar(id) {
+      return AI_AVATARS.find(a => a.id === id) || AI_AVATARS[0];
+    }
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+    function toDateKey(dateObj) {
+      return `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}-${pad2(dateObj.getDate())}`; } function parseDateKey(key) { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d); } function addDays(dateKey, delta) { const d = parseDateKey(dateKey); d.setDate(d.getDate() + delta); return toDateKey(d); } function formatPolishDate(dateKey) { const d = parseDateKey(dateKey); return d.toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); } function formatShortDate(dateKey) { const d = parseDateKey(dateKey); return d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }); } function daysBetween(startKey, endKey) { const a = parseDateKey(startKey); const b = parseDateKey(endKey); const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate()); const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()); return Math.round((utcB - utcA) / 86400000); } function parseWeightInput(val) { if (typeof val === 'number') return Number.isFinite(val) ? Number(val.toFixed(2)) : 0; const cleaned = String(val).trim().replace(',', '.').replace(/[^0-9.]/g, ''); const num = parseFloat(cleaned); return Number.isFinite(num) ? Number(num.toFixed(2)) : 0; } function formatWeight(val) { return `${parseWeightInput(val).toFixed(2)} kg`;
+    }
+
+    const TODAY_KEY = toDateKey(new Date());
+
+    function getDefaultData() {
+      const startWeight = 82.00;
+      const goalWeight = 78.00;
+      const currentMonth = TODAY_KEY.slice(0, 7);
+      const d1 = addDays(TODAY_KEY, -6);
+      const d2 = addDays(TODAY_KEY, -4);
+      const d3 = addDays(TODAY_KEY, -2);
+
+      return {
+        onboardingCompleted: false,
+        profile: {
+          name: 'Zawodnik',
+          gender: 'male',
+          age: 22,
+          heightCm: 180,
+          startWeight,
+          currentWeight: startWeight,
+          goalWeight,
+          goalType: 'recomp',
+          calorieGoal: 2400,
+          waterGoalMl: 3000,
+          userAvatar: 'cyber_fighter',
+          aiAvatar: 'core_ai',
+          geminiApiKey: ''
+        },
+        habits: [
+          { id: 'h_creatine', title: 'Kreatyna', icon: '⚡' },
+          { id: 'h_water', title: 'Woda (cel dzienny)', icon: '💧' },
+          { id: 'h_teeth_am', title: 'Mycie zębów rano', icon: '🪥' },
+          { id: 'h_teeth_pm', title: 'Mycie zębów wieczorem', icon: '🌙' },
+          { id: 'h_mustache', title: 'Dbanie o wąsa rano', icon: '🧔' }
+        ],
+        habitCompletions: {
+          [TODAY_KEY]: {}
+        },
+        recurringRules: [
+          {
+            id: 'r_gym_3d',
+            title: 'Siłownia',
+            icon: '🏋️',
+            type: 'every_n_days',
+            intervalDays: 3,
+            anchorDate: TODAY_KEY
+          },
+          {
+            id: 'r_flowers_monthly',
+            title: 'Kwiaty dla dziewczyny',
+            icon: '💐',
+            type: 'monthly_day',
+            dayOfMonth: 14
+          }
+        ],
+        recurringCompletions: {},
+        tasksByDate: {
+          [TODAY_KEY]: [
+            { id: 't_1', title: 'Sprawdzić plan dnia w YouVsYou', done: false }
+          ]
+        },
+        events: [
+          { id: 'e_1', title: 'Urodziny dziewczyny', date: `${currentMonth}-14`, recurringYearly: true, category: 'Bliscy' } ], caloriesByDate: { [TODAY_KEY]: [] }, sleepByDate: { [d1]: { hours: 7.5, quality: 'Dobry', note: '' }, [d2]: { hours: 6.5, quality: 'Średni', note: '' }, [d3]: { hours: 8.0, quality: 'Świetny', note: '' } }, waterByDate: { [TODAY_KEY]: [] }, weightLogs: [ { id: 'w_1', date: d3, weight: Number((startWeight + 0.6).toFixed(2)) }, { id: 'w_2', date: d2, weight: Number((startWeight + 0.3).toFixed(2)) }, { id: 'w_3', date: TODAY_KEY, weight: startWeight } ], aiMessages: [ { role: 'assistant', text: 'Cześć! Jestem Twoim asystentem w **YouVsYou**. Napisz naturalnie co zrobiłeś, zjadłeś, wypiłeś albo zaplanowałeś — np. *"wypiłem 500 ml wody i wziąłem kreatynę"*, *"ważę dziś 81.50 kg"* albo *"dodaj nawyk rozciąganie wieczorem"*.', applied: [] } ] }; }  function readBackupFromWindow() { try { if (window.name && window.name.startsWith(BACKUP_NAME_KEY)) { const raw = window.name.slice(BACKUP_NAME_KEY.length); const parsed = JSON.parse(raw); if (parsed && typeof parsed === 'object') return parsed; } } catch (_) {} return null; }  function writeBackupToWindow(data) { try { const serialized = JSON.stringify(data); if (serialized.length < 1500000) { window.name = BACKUP_NAME_KEY + serialized; } } catch (_) {} }  let memoryFallbackState = null;  function loadState() { const base = getDefaultData(); let parsed = null; try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) parsed = JSON.parse(raw); } catch (_) {}  const winBackup = readBackupFromWindow(); if (!parsed && winBackup) parsed = winBackup; if (!parsed && memoryFallbackState) parsed = memoryFallbackState;  if (!parsed \vert{}\vert{} typeof parsed !== 'object') return base;  const mergedProfile = { ...base.profile, ...(parsed.profile \vert{}\vert{} {}) }; mergedProfile.startWeight = parseWeightInput(mergedProfile.startWeight ?? base.profile.startWeight); mergedProfile.currentWeight = parseWeightInput(mergedProfile.currentWeight ?? mergedProfile.startWeight); mergedProfile.goalWeight = parseWeightInput(mergedProfile.goalWeight ?? base.profile.goalWeight); mergedProfile.userAvatar = mergedProfile.userAvatar \vert{}\vert{} base.profile.userAvatar; mergedProfile.aiAvatar = mergedProfile.aiAvatar \vert{}\vert{} base.profile.aiAvatar; mergedProfile.geminiApiKey = mergedProfile.geminiApiKey \vert{}\vert{} '';  const merged = { ...base, ...parsed, onboardingCompleted: Boolean(parsed.onboardingCompleted), profile: mergedProfile, habits: Array.isArray(parsed.habits) && parsed.habits.length ? parsed.habits : base.habits, habitCompletions: parsed.habitCompletions && typeof parsed.habitCompletions === 'object' ? parsed.habitCompletions : base.habitCompletions, recurringRules: Array.isArray(parsed.recurringRules) && parsed.recurringRules.length ? parsed.recurringRules : base.recurringRules, recurringCompletions: parsed.recurringCompletions && typeof parsed.recurringCompletions === 'object' ? parsed.recurringCompletions : {}, tasksByDate: parsed.tasksByDate && typeof parsed.tasksByDate === 'object' ? parsed.tasksByDate : base.tasksByDate, events: Array.isArray(parsed.events) ? parsed.events : base.events, caloriesByDate: parsed.caloriesByDate && typeof parsed.caloriesByDate === 'object' ? parsed.caloriesByDate : base.caloriesByDate, sleepByDate: parsed.sleepByDate && typeof parsed.sleepByDate === 'object' ? parsed.sleepByDate : base.sleepByDate, waterByDate: parsed.waterByDate && typeof parsed.waterByDate === 'object' ? parsed.waterByDate : base.waterByDate, weightLogs: Array.isArray(parsed.weightLogs) && parsed.weightLogs.length ? parsed.weightLogs.map(w => ({ ...w, weight: parseWeightInput(w.weight) })) : base.weightLogs, aiMessages: Array.isArray(parsed.aiMessages) && parsed.aiMessages.length ? parsed.aiMessages : base.aiMessages };  memoryFallbackState = merged; writeBackupToWindow(merged); return merged; }  function saveState() { memoryFallbackState = state; writeBackupToWindow(state); try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {} }  // ========================================================================= // 2. LOGIKA CYKLICZNYCH PRZYPOMNIEŃ, WODY I KALORII // ========================================================================= function getRuleStatusForDate(rule, dateKey) { if (rule.type === 'every_n_days') { const interval = Math.max(1, Number(rule.intervalDays) \vert{}\vert{} 3); const anchor = rule.anchorDate \vert{}\vert{} TODAY_KEY; const diff = daysBetween(anchor, dateKey); const mod = ((diff \% interval) + interval) \% interval; const isDue = mod === 0; const daysUntil = isDue ? 0 : (interval - mod); return { isDue, daysUntil, label: isDue ? 'Dzisiaj wypada!' : (daysUntil === 1 ? 'Za 1 dzień' : `Za ${daysUntil} dni`)
+        };
+      }
+      if (rule.type === 'monthly_day') {
+        const targetDay = Math.min(28, Math.max(1, Number(rule.dayOfMonth) || 14));
+        const d = parseDateKey(dateKey);
+        const curDay = d.getDate();
+        const isDue = curDay === targetDay;
+        let daysUntil = 0;
+        if (!isDue) {
+          if (curDay < targetDay) {
+            daysUntil = targetDay - curDay;
+          } else {
+            const nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, targetDay);
+            daysUntil = daysBetween(dateKey, toDateKey(nextMonth));
+          }
+        }
+        return {
+          isDue,
+          daysUntil,
+          label: isDue ? `Dzisiaj (${targetDay}. dzień miesiąca)` : `${targetDay}. każdego miesiąca (za ${daysUntil} dni)`
+        };
+      }
+      return { isDue: false, daysUntil: 0, label: '' };
+    }
+
+    function isRuleDone(ruleId, dateKey) {
+      return Boolean(state.recurringCompletions?.[dateKey]?.[ruleId]);
+    }
+
+    function toggleRuleCompletion(ruleId, dateKey) {
+      if (!state.recurringCompletions[dateKey]) state.recurringCompletions[dateKey] = {};
+      state.recurringCompletions[dateKey][ruleId] = !state.recurringCompletions[dateKey][ruleId];
+      saveState();
+      render();
+    }
+
+    function getWaterTotal(dateKey) {
+      const list = state.waterByDate[dateKey] || [];
+      return list.reduce((sum, item) => sum + (Number(item.ml) || 0), 0);
+    }
+
+    function syncWaterHabit(dateKey) {
+      const waterHabit = state.habits.find(h => h.id === 'h_water' || h.title.toLowerCase().includes('woda'));
+      if (!waterHabit) return;
+      const total = getWaterTotal(dateKey);
+      const goal = Number(state.profile.waterGoalMl) || 3000;
+      if (!state.habitCompletions[dateKey]) state.habitCompletions[dateKey] = {};
+      if (total >= goal) {
+        state.habitCompletions[dateKey][waterHabit.id] = true;
+      }
+    }
+
+    function addWaterEntry(dateKey, ml, source = 'Ręcznie') {
+      const amount = Math.round(Number(ml) || 0);
+      if (amount <= 0) return;
+      if (!state.waterByDate[dateKey]) state.waterByDate[dateKey] = [];
+      const now = new Date();
+      const timeStr = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+      state.waterByDate[dateKey].push({
+        id: 'wtr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        ml: amount,
+        time: timeStr,
+        source
+      });
+      syncWaterHabit(dateKey);
+      saveState();
+    }
+
+    function getCaloriesSummary(dateKey) {
+      const items = state.caloriesByDate[dateKey] || [];
+      return items.reduce((acc, it) => {
+        acc.kcal += Number(it.kcal) || 0;
+        acc.protein += Number(it.protein) || 0;
+        return acc;
+      }, { kcal: 0, protein: 0 });
+    }
+
+    function addMealEntry(dateKey, name, kcal, protein = 0, mealType = 'Posiłek') {
+      const cleanName = (name || 'Posiłek').trim();
+      const cleanKcal = Math.max(0, Math.round(Number(kcal) || 0));
+      const cleanProtein = Math.max(0, Math.round(Number(protein) || 0));
+      if (!state.caloriesByDate[dateKey]) state.caloriesByDate[dateKey] = [];
+      state.caloriesByDate[dateKey].push({
+        id: 'meal_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        name: cleanName,
+        kcal: cleanKcal,
+        protein: cleanProtein,
+        mealType
+      });
+      saveState();
+    }
+
+    function addWeightEntry(dateKey, weightVal) {
+      const w = parseWeightInput(weightVal);
+      if (w <= 0) return;
+      state.profile.currentWeight = w;
+      if (!state.profile.startWeight || state.profile.startWeight <= 0) {
+        state.profile.startWeight = w;
+      }
+      const existingIdx = state.weightLogs.findIndex(item => item.date === dateKey);
+      if (existingIdx >= 0) {
+        state.weightLogs[existingIdx].weight = w;
+      } else {
+        state.weightLogs.push({
+          id: 'w_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+          date: dateKey,
+          weight: w
+        });
+      }
+      state.weightLogs.sort((a, b) => a.date.localeCompare(b.date));
+      saveState();
+    }
+
+    function suggestTargets(profile) {
+      const weight = parseWeightInput(profile.currentWeight) || 80;
+      const height = Number(profile.heightCm) || 178;
+      const age = Number(profile.age) || 24;
+      const sexOffset = profile.gender === 'female' ? -161 : 5;
+      const bmr = 10 * weight + 6.25 * height - 5 * age + sexOffset;
+      let tdee = bmr * 1.45;
+      if (profile.goalType === 'cut') tdee -= 350;
+      if (profile.goalType === 'bulk') tdee += 300;
+      const calorieGoal = Math.max(1400, Math.round(tdee / 50) * 50);
+      const waterGoalMl = Math.max(2000, Math.round((weight * 35) / 250) * 250);
+      return { calorieGoal, waterGoalMl };
+    }
+
+    // =========================================================================
+    // 3. ASYSTENT AI (GEMINI API POZA ROZMOWĄ + INTELIGENTNY PARSER LOKALNY)
+    // =========================================================================
+    function applyParsedActions(actions) {
+      const appliedLabels = [];
+      if (!Array.isArray(actions)) return appliedLabels;
+
+      for (const act of actions) {
+        if (!act || !act.type) continue;
+        const targetDate = act.date && /^\d{4}-\d{2}-\d{2}$/.test(act.date) ? act.date : TODAY_KEY;
+
+        if (act.type === 'water') {
+          const ml = Number(act.ml) || 250;
+          addWaterEntry(targetDate, ml, 'Asystent AI');
+          appliedLabels.push(`+${ml} ml wody (${formatShortDate(targetDate)})`);
+        } else if (act.type === 'meal') {
+          const name = act.name || 'Posiłek';
+          const kcal = Number(act.kcal) || 350;
+          const protein = Number(act.protein) || 20;
+          addMealEntry(targetDate, name, kcal, protein, act.mealType || 'Posiłek');
+          appliedLabels.push(`Posiłek: ${name} (${kcal} kcal, ${protein}g B)`); } else if (act.type === 'sleep') { const hours = Number(act.hours) \vert{}\vert{} 7; const quality = act.quality \vert{}\vert{} 'Dobry'; state.sleepByDate[targetDate] = { hours: Number(hours.toFixed(1)), quality, note: act.note \vert{}\vert{} 'Dodane przez Asystenta AI' }; saveState(); appliedLabels.push(`Sen: ${hours}h (${quality}) na${formatShortDate(targetDate)}`);
+        } else if (act.type === 'weight') {
+          const w = parseWeightInput(act.weight);
+          if (w > 0) {
+            addWeightEntry(targetDate, w);
+            appliedLabels.push(`Waga: ${formatWeight(w)} (${formatShortDate(targetDate)})`);
+          }
+        } else if (act.type === 'habit_done') {
+          const query = (act.habitName || '').toLowerCase();
+          const matched = state.habits.find(h => h.title.toLowerCase().includes(query) || query.includes(h.title.toLowerCase().split(' ')[0]));
+          if (matched) {
+            if (!state.habitCompletions[targetDate]) state.habitCompletions[targetDate] = {};
+            state.habitCompletions[targetDate][matched.id] = true;
+            saveState();
+            appliedLabels.push(`Zaliczono nawyk: ${matched.title}`);
+          } else if (act.habitName) {
+            if (!state.tasksByDate[targetDate]) state.tasksByDate[targetDate] = [];
+            state.tasksByDate[targetDate].push({ id: 'tsk_' + Date.now() + Math.random(), title: act.habitName, done: true });
+            saveState();
+            appliedLabels.push(`Zapisano jako wykonane: ${act.habitName}`);
+          }
+        } else if (act.type === 'add_habit') {
+          const title = (act.title || '').trim();
+          if (title) {
+            state.habits.push({
+              id: 'h_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+              title,
+              icon: act.icon || '✅'
+            });
+            saveState();
+            appliedLabels.push(`Nowy codzienny nawyk: ${title}`);
+          }
+        } else if (act.type === 'task') {
+          const title = (act.title || '').trim();
+          if (title) {
+            if (!state.tasksByDate[targetDate]) state.tasksByDate[targetDate] = [];
+            state.tasksByDate[targetDate].push({
+              id: 'tsk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+              title,
+              done: false
+            });
+            saveState();
+            appliedLabels.push(`Zadanie na ${formatShortDate(targetDate)}: ${title}`); } } else if (act.type === 'event') { const title = (act.title \vert{}\vert{} 'Wydarzenie').trim(); state.events.push({ id: 'evt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5), title, date: targetDate, recurringYearly: Boolean(act.recurringYearly), category: act.category \vert{}\vert{} 'Wydarzenie' }); saveState(); appliedLabels.push(`Kalendarz (${formatShortDate(targetDate)}): ${title}${act.recurringYearly ? ' [co roku]' : ''}`);
+        }
+      }
+
+      return appliedLabels;
+    }
+
+    function parseNaturalLanguageLocal(input) {
+      const text = input.trim();
+      const lower = text.toLowerCase();
+      const actions = [];
+
+      let targetDate = TODAY_KEY;
+      if (/\bpojutrze\b/.test(lower)) targetDate = addDays(TODAY_KEY, 2);
+      else if (/\bjutro\b/.test(lower)) targetDate = addDays(TODAY_KEY, 1);
+      else if (/\bwczoraj\b/.test(lower)) targetDate = addDays(TODAY_KEY, -1);
+
+      const monthsMap = {
+        stycznia: '01', styczen: '01',
+        lutego: '02', luty: '02',
+        marca: '03', marzec: '03',
+        kwietnia: '04', kwiecien: '04',
+        maja: '05', maj: '05',
+        czerwca: '06', czerwiec: '06',
+        lipca: '07', lipiec: '07',
+        sierpnia: '08', sierpien: '08',
+        wrzesnia: '09', wrzesien: '09',
+        pazdziernika: '10', 'października': '10', pazdziernik: '10', 'październik': '10',
+        listopada: '11', listopad: '11',
+        grudnia: '12', grudzien: '12'
+      };
+      const monthMatch = lower.match(/\b(\d{1,2})\s+(stycznia|lutego|marca|kwietnia|maja|czerwca|lipca|sierpnia|wrzesnia|września|pazdziernika|października|listopada|grudnia)\b/);
+      if (monthMatch) {
+        const day = pad2(Number(monthMatch[1]));
+        const mKey = monthMatch[2].replace('ś', 's').replace('ź', 'z');
+        const mon = monthsMap[mKey] || '01';
+        const yr = parseDateKey(TODAY_KEY).getFullYear();
+        targetDate = `${yr}-${mon}-${day}`;
+      }
+
+      // Woda
+      const literMatch = lower.match(/(\d+(?:[.,]\d+)?)\s*(?:l|litr|litra|litrów)/);
+      const mlMatch = lower.match(/(\d{2,4})\s*ml/);
+      if (literMatch) {
+        const liters = parseFloat(literMatch[1].replace(',', '.'));
+        if (liters > 0 && liters <= 10) actions.push({ type: 'water', ml: Math.round(liters * 1000), date: targetDate });
+      } else if (mlMatch) {
+        actions.push({ type: 'water', ml: Number(mlMatch[1]), date: targetDate });
+      } else if (/pół litra|pol litra/.test(lower)) {
+        actions.push({ type: 'water', ml: 500, date: targetDate });
+      } else if (/szklank[aęi] wody|wypiłem wod[ęe]|wypilem wode/.test(lower)) {
+        actions.push({ type: 'water', ml: 250, date: targetDate });
+      }
+
+      // Waga
+      const weightMatch = lower.match(/(?:waż[ęe]|waze|waga)\s*(?:dzi[śs]|dzis)?\s*[:=]?\s*(\d{2,3}(?:[.,]\d{1,2})?)\s*(?:kg)?/);
+      if (weightMatch) {
+        actions.push({ type: 'weight', weight: parseWeightInput(weightMatch[1]), date: targetDate });
+      }
+
+      // Sen
+      const sleepHoursMatch = lower.match(/(\d+(?:[.,]\d+)?)\s*(?:h|godz|godzin|godziny)\s*(?:snu)?/);
+      const sleepWordMatch = lower.match(/(?:spałem|spalem|sen)\s+(\d+(?:[.,]\d+)?)/);
+      if (sleepHoursMatch || sleepWordMatch) {
+        const rawH = sleepHoursMatch ? sleepHoursMatch[1] : sleepWordMatch[1];
+        const hours = parseFloat(rawH.replace(',', '.'));
+        let quality = 'Dobry';
+        if (/średnio|srednio|tak sobie|słabo|slabo/.test(lower)) quality = 'Średni';
+        else if (/świetnie|swietnie|super|extra|mocno/.test(lower)) quality = 'Świetny';
+        actions.push({ type: 'sleep', hours, quality, date: targetDate });
+      }
+
+      // Posiłek / kalorie
+      if (/zjadłem|zjadlem|zjadłam|zjadlam|na śniadanie|na sniadanie|na obiad|na kolację|na kolacje|kcal|kalorii/.test(lower)) {
+        const kcalMatch = lower.match(/(\d{2,4})\s*kcal/);
+        const protMatch = lower.match(/(\d{1,3})\s*g?\s*(?:białka|bialka|b)/);
+        let mealName = text
+          .replace(/^(wypiłem|wypilem|i)\s+/i, '')
+          .replace(/(zjadłem|zjadlem|zjadłam|zjadlam)\s+/i, '')
+          .replace(/\(?\s*\d{2,4}\s*kcal[^)]*\)?/gi, '')
+          .trim();
+        if (mealName.length > 60) mealName = mealName.slice(0, 60) + '…';
+        const estimatedKcal = kcalMatch ? Number(kcalMatch[1]) : 420;
+        const estimatedProtein = protMatch ? Number(protMatch[1]) : 22;
+        actions.push({
+          type: 'meal',
+          name: mealName || 'Posiłek',
+          kcal: estimatedKcal,
+          protein: estimatedProtein,
+          date: targetDate
+        });
+      }
+
+      // Dodanie nowego codziennego nawyku
+      const addHabitMatch = text.match(/(?:dodaj\s+(?:codzienny\s+)?nawyk|nowy\s+nawyk)\s+(.+)/i);
+      if (addHabitMatch) {
+        actions.push({ type: 'add_habit', title: addHabitMatch[1].trim() });
+      }
+
+      // Odhaczenie nawyku
+      if (/kreatyn[ęe]|kreatyna/.test(lower) && /wzi[aą][łl][eę]m|zaliczon|zrobion|odznacz/.test(lower)) {
+        actions.push({ type: 'habit_done', habitName: 'Kreatyna', date: targetDate });
+      }
+      if (/w[aą]s|wasa/.test(lower) && /zadbane|zrobion|rano|odznacz/.test(lower) && !addHabitMatch) {
+        actions.push({ type: 'habit_done', habitName: 'Dbanie o wąsa rano', date: targetDate });
+      }
+      if (/z[eę]b[yi]|szczotkowan/.test(lower) && /umyt|zrobion|odznacz/.test(lower)) {
+        const isEvening = /wieczor|noc/.test(lower);
+        actions.push({ type: 'habit_done', habitName: isEvening ? 'Mycie zębów wieczorem' : 'Mycie zębów rano', date: targetDate });
+      }
+
+      // Urodziny / wydarzenie w kalendarzu
+      if (/urodzin/.test(lower)) {
+        const cleanTitle = text.replace(/^(przypomnij\s+mi\s+|dodaj\s+|zapisz\s+)/i, '').trim();
+        actions.push({ type: 'event', title: cleanTitle, date: targetDate, recurringYearly: true, category: 'Urodziny' });
+      } else {
+        const taskMatch = text.match(/(?:dodaj\s+zadanie|zadanie|przypomnij(?:\s+mi)?(?:\s+o)?)\s+(.+)/i);
+        if (taskMatch) {
+          actions.push({ type: 'task', title: taskMatch[1].trim(), date: targetDate });
+        }
+      }
+
+      if (!actions.length) {
+        actions.push({ type: 'task', title: text, date: targetDate });
+      }
+
+      return {
+        reply: 'Zapisałem to w Twoim planerze **YouVsYou**!',
+        actions
+      };
+    }
+
+    async function sendAiPrompt(rawPrompt) {
+      const prompt = (rawPrompt || '').trim();
+      if (!prompt || ui.aiLoading) return;
+
+      state.aiMessages.push({ role: 'user', text: prompt, applied: [] });
+      ui.aiDraft = '';
+      ui.aiLoading = true;
+      saveState();
+      render();
+
+      const apiKey = (state.profile.geminiApiKey || '').trim();
+      let replyText = '';
+      let applied = [];
+
+      if (apiKey) {
+        try {
+          const systemInstruction = `Jesteś asystentem aplikacji YouVsYou dla użytkownika "${state.profile.name}".
+Dzisiejsza data: ${TODAY_KEY}. Profil: wiek ${state.profile.age}, wzrost ${state.profile.heightCm} cm, waga obecna ${parseWeightInput(state.profile.currentWeight).toFixed(2)} kg, cel ${parseWeightInput(state.profile.goalWeight).toFixed(2)} kg, cel kalorii ${state.profile.calorieGoal} kcal, cel wody ${state.profile.waterGoalMl} ml.
+Codzienne nawyki użytkownika: ${state.habits.map(h => h.title).join(', ')}.
+
+Przeanalizuj wiadomość użytkownika i zwróć WYŁĄCZNIE poprawny obiekt JSON (bez markdown \`\`\`):
+{
+  "reply": "krótka, naturalna odpowiedź po polsku po imieniu",
+  "actions": [
+    // możliwe typy:
+    // {"type":"water","ml":500,"date":"YYYY-MM-DD"}
+    // {"type":"meal","name":"nazwa","kcal":450,"protein":25,"mealType":"Posiłek","date":"YYYY-MM-DD"}
+    // {"type":"sleep","hours":7.5,"quality":"Dobry","date":"YYYY-MM-DD"}
+    // {"type":"weight","weight":81.50,"date":"YYYY-MM-DD"}
+    // {"type":"habit_done","habitName":"Kreatyna","date":"YYYY-MM-DD"}
+    // {"type":"add_habit","title":"nazwa nawyku"}
+    // {"type":"task","title":"treść zadania","date":"YYYY-MM-DD"}
+    // {"type":"event","title":"nazwa wydarzenia","date":"YYYY-MM-DD","recurringYearly":true,"category":"Wydarzenie"}
+  ]
+}`;
+
+          const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [
+                { role: 'user', parts: [{ text: systemInstruction + '\n\nWiadomość użytkownika: ' + prompt }] }
+              ],
+              generationConfig: { temperature: 0.2 }
+            })
+          });
+          const data = await resp.json();
+          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            applied = applyParsedActions(parsed.actions || []);
+            replyText = parsed.reply || 'Zaktualizowałem Twoje dane w YouVsYou!';
+          } else {
+            throw new Error('Brak JSON');
+          }
+        } catch (_) {
+          const fallback = parseNaturalLanguageLocal(prompt);
+          applied = applyParsedActions(fallback.actions);
+          replyText = fallback.reply;
+        }
+      } else {
+        const localRes = parseNaturalLanguageLocal(prompt);
+        applied = applyParsedActions(localRes.actions);
+        replyText = localRes.reply;
+      }
+
+      state.aiMessages.push({
+        role: 'assistant',
+        text: replyText,
+        applied
+      });
+      ui.aiLoading = false;
+      saveState();
+      render();
+    }
+
+    // =========================================================================
+    // 4. STAN UI I NAWIGACJA
+    // =========================================================================
+    let state = loadState();
+
+    const ui = {
+      activeTab: 'today',
+      selectedDate: TODAY_KEY,
+      calMonthOffset: 0,
+      calendarView: 'month',
+      aiOpen: false,
+      aiDraft: '',
+      aiLoading: false,
+      onboardingStep: 0,
+      showHabitEditor: false,
+      showRuleModal: false,
+      showAvatarModal: false,
+      tempProfile: { ...state.profile }
+    };
+
+    function openOnboarding() {
+      ui.tempProfile = { ...state.profile };
+      ui.onboardingStep = 0;
+      state.onboardingCompleted = false;
+      saveState();
+      render();
+    }
+
+    function finishOnboarding() {
+      const p = ui.tempProfile;
+      const startW = parseWeightInput(p.startWeight) || 80.00;
+      const goalW = parseWeightInput(p.goalWeight) || startW;
+      state.profile = {
+        ...state.profile,
+        name: (p.name || 'Zawodnik').trim() || 'Zawodnik',
+        gender: p.gender || 'male',
+        age: Math.max(10, Math.min(110, Number(p.age) || 22)),
+        heightCm: Math.max(120, Math.min(230, Number(p.heightCm) || 180)),
+        startWeight: startW,
+        currentWeight: startW,
+        goalWeight: goalW,
+        goalType: p.goalType || 'recomp',
+        calorieGoal: Math.max(1000, Number(p.calorieGoal) || 2400),
+        waterGoalMl: Math.max(500, Number(p.waterGoalMl) || 3000),
+        userAvatar: p.userAvatar || state.profile.userAvatar,
+        aiAvatar: p.aiAvatar || state.profile.aiAvatar,
+        geminiApiKey: p.geminiApiKey ?? state.profile.geminiApiKey
+      };
+      addWeightEntry(TODAY_KEY, startW);
+      state.onboardingCompleted = true;
+      saveState();
+      render();
+    }
+
+    // =========================================================================
+    // 5. KREATOR POWITALNY (1 PYTANIE = 1 SLAJD)
+    // =========================================================================
+    function renderOnboarding() {
+      const p = ui.tempProfile;
+      const totalSlides = 8;
+      const step = Math.max(0, Math.min(totalSlides - 1, ui.onboardingStep));
+      const pct = Math.round(((step + 1) / totalSlides) * 100);
+      const suggested = suggestTargets(p);
+
+      const nextStep = () => {
+        if (step < totalSlides - 1) {
+          if (step === 5) {
+            p.calorieGoal = suggested.calorieGoal;
+            p.waterGoalMl = suggested.waterGoalMl;
+          }
+          ui.onboardingStep = step + 1;
+          render();
+          setTimeout(() => {
+            const inp = document.querySelector('#slide-focus-input');
+            if (inp) inp.focus();
+          }, 40);
+        } else {
+          finishOnboarding();
+        }
+      };
+
+      const prevStep = () => {
+        if (step > 0) {
+          ui.onboardingStep = step - 1;
+          render();
+        }
+      };
+
+      let slideBody = '';
+
+      if (step === 0) {
+        slideBody = `
+          <div class="slide-step space-y-6">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              YouVsYou • Krok 1 z ${totalSlides}
+            </span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Jak mamy się do Ciebie zwracać?</h1>
+            <p class="text-slate-400 text-base">Twój osobisty planer nawyków, kalendarza i formy. Podaj swoje imię lub pseudonim.</p>
+            <input id="slide-focus-input" type="text" value="${escapeAttr(p.name)}" placeholder="Np. Kuba, Alex..."
+              class="w-full px-5 py-4 rounded-2xl bg-slate-900/90 border border-white/15 text-xl font-semibold text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 transition" />
+          </div>
+        `;
+      } else if (step === 1) {
+        slideBody = `
+          <div class="slide-step space-y-6">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+              Krok 2 z ${totalSlides}
+            </span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Wybierz płeć</h1>
+            <p class="text-slate-400 text-base">Pomaga lepiej oszacować wyjściowe zapotrzebowanie kaloryczne i nawodnienie.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button type="button" data-pick-gender="male" class="p-5 rounded-2xl border text-left transition ${p.gender === 'male' ? 'bg-emerald-500/15 border-emerald-400 text-white' : 'bg-slate-900/70 border-white/10 text-slate-300 hover:border-white/25'}">
+                <div class="text-2xl mb-2">⚡</div>
+                <div class="font-bold text-lg">Mężczyzna</div>
+                <div class="text-xs text-slate-400 mt-1">Kliknij, aby wybrać i przejść dalej</div>
+              </button>
+              <button type="button" data-pick-gender="female" class="p-5 rounded-2xl border text-left transition ${p.gender === 'female' ? 'bg-emerald-500/15 border-emerald-400 text-white' : 'bg-slate-900/70 border-white/10 text-slate-300 hover:border-white/25'}">
+                <div class="text-2xl mb-2">✨</div>
+                <div class="font-bold text-lg">Kobieta</div>
+                <div class="text-xs text-slate-400 mt-1">Kliknij, aby wybrać i przejść dalej</div>
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (step === 2) {
+        slideBody = `
+          <div class="slide-step space-y-6">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              Krok 3 z ${totalSlides}
+            </span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Ile masz lat?</h1>
+            <p class="text-slate-400 text-base">Wiek wpływa na podstawową przemianę materii i regenerację.</p>
+            <div class="flex items-center gap-4">
+              <input id="slide-focus-input" type="number" min="10" max="110" value="${p.age}"
+                class="w-40 px-5 py-4 rounded-2xl bg-slate-900/90 border border-white/15 text-2xl font-bold text-white focus:outline-none focus:border-emerald-400" />
+              <span class="text-lg font-semibold text-slate-400">lat</span>
+            </div>
+          </div>
+        `;
+      } else if (step === 3) {
+        slideBody = `
+          <div class="slide-step space-y-6">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+              Krok 4 z ${totalSlides}
+            </span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Jaki masz wzrost?</h1>
+            <p class="text-slate-400 text-base">Potrzebne m.in. do wyliczenia wskaźnika BMI i celów sylwetkowych.</p>
+            <div class="flex items-center gap-4">
+              <input id="slide-focus-input" type="number" min="120" max="230" value="${p.heightCm}"
+                class="w-44 px-5 py-4 rounded-2xl bg-slate-900/90 border border-white/15 text-2xl font-bold text-white focus:outline-none focus:border-emerald-400" />
+              <span class="text-lg font-semibold text-slate-400">cm</span>
+            </div>
+          </div>
+        `;
+      } else if (step === 4) {
+        slideBody = `
+          <div class="slide-step space-y-6">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              Krok 5 z ${totalSlides}
+            </span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Jaka jest Twoja obecna waga?</h1>
+            <p class="text-slate-400 text-base">Możesz wpisać z kropką lub przecinkiem — zachowamy pełne dwa miejsca po przecinku (np. <span class="text-slate-200 font-semibold">100.00</span>).</p>
+            <div class="flex items-center gap-4">
+              <input id="slide-focus-input" type="text" inputmode="decimal" value="${parseWeightInput(p.startWeight).toFixed(2)}"
+                class="w-52 px-5 py-4 rounded-2xl bg-slate-900/90 border border-white/15 text-2xl font-bold text-white focus:outline-none focus:border-emerald-400" />
+              <span class="text-lg font-semibold text-slate-400">kg</span>
+            </div>
+          </div>
+        `;
+      } else if (step === 5) {
+        slideBody = `
+          <div class="slide-step space-y-6">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+              Krok 6 z ${totalSlides}
+            </span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Jaka jest Twoja waga docelowa?</h1>
+            <p class="text-slate-400 text-base">Ustaw punkt, do którego dążysz w zakładce <span class="text-slate-200 font-semibold">Waga & Cel</span>.</p>
+            <div class="flex items-center gap-4">
+              <input id="slide-focus-input" type="text" inputmode="decimal" value="${parseWeightInput(p.goalWeight).toFixed(2)}"
+                class="w-52 px-5 py-4 rounded-2xl bg-slate-900/90 border border-white/15 text-2xl font-bold text-white focus:outline-none focus:border-emerald-400" />
+              <span class="text-lg font-semibold text-slate-400">kg</span>
+            </div>
+          </div>
+        `;
+      } else if (step === 6) {
+        const goals = [
+          { id: 'cut', icon: '🔥', title: 'Redukcja / Spadek wagi', desc: 'Lekki deficyt kaloryczny i budowanie nawyków' },
+          { id: 'recomp', icon: '⚔️', title: 'Rekompozycja / Forma', desc: 'Siła, estetyka i codzienna dyscyplina' },
+          { id: 'bulk', icon: '💪', title: 'Budowa masy mięśniowej', desc: 'Nadwyżka kaloryczna i progres treningowy' }
+        ];
+        slideBody = `
+          <div class="slide-step space-y-6">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              Krok 7 z ${totalSlides}
+            </span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Jaki jest Twój główny cel?</h1>
+            <p class="text-slate-400 text-base">Wybierz kierunek — przejdziemy od razu do wyliczenia dziennych limitów.</p>
+            <div class="space-y-3">
+              ${goals.map(g => `
+                <button type="button" data-pick-goal="${g.id}" class="w-full p-4 rounded-2xl border text-left flex items-center gap-4 transition ${p.goalType === g.id ? 'bg-emerald-500/15 border-emerald-400 text-white' : 'bg-slate-900/70 border-white/10 text-slate-300 hover:border-white/25'}">
+                  <span class="text-2xl">${g.icon}</span>
+                  <div>
+                    <div class="font-bold text-base">${g.title}</div>
+                    <div class="text-xs text-slate-400">${g.desc}</div>
+                  </div>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        slideBody = `
+          <div class="slide-step space-y-6">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              Krok 8 z ${totalSlides} • Gotowe
+            </span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Twoje dzienne cele w YouVsYou</h1>
+            <p class="text-slate-400 text-base">Możesz zostawić proponowane wartości albo wpisać własne przed wejściem do aplikacji.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="p-4 rounded-2xl bg-slate-900/80 border border-white/10">
+                <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-2">Limit kalorii (kcal)</label>
+                <input id="input-onboard-kcal" type="number" step="50" value="${p.calorieGoal}"
+                  class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-xl font-bold text-emerald-300 focus:outline-none focus:border-emerald-400" />
+              </div>
+              <div class="p-4 rounded-2xl bg-slate-900/80 border border-white/10">
+                <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-2">Cel wody (ml)</label>
+                <input id="input-onboard-water" type="number" step="250" value="${p.waterGoalMl}"
+                  class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-xl font-bold text-cyan-300 focus:outline-none focus:border-cyan-400" />
+              </div>
+            </div>
+            <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-300">
+              <span>Profil: <strong class="text-white">${escapeHtml(p.name)}</strong> (${p.age} lat, ${p.heightCm} cm)</span>
+              <span>Waga: <strong class="text-emerald-300">${formatWeight(p.startWeight)}</strong> → <strong class="text-indigo-300">${formatWeight(p.goalWeight)}</strong></span>
+            </div>
+          </div>
+        `;
+      }
+
+      const syncCurrentSlideInput = () => {
+        const el = document.querySelector('#slide-focus-input');
+        if (!el) return;
+        if (step === 0) p.name = el.value;
+        else if (step === 2) p.age = Number(el.value) || 22;
+        else if (step === 3) p.heightCm = Number(el.value) || 180;
+        else if (step === 4) p.startWeight = parseWeightInput(el.value);
+        else if (step === 5) p.goalWeight = parseWeightInput(el.value);
+
+        if (step === 7) {
+          const kEl = document.querySelector('#input-onboard-kcal');
+          const wEl = document.querySelector('#input-onboard-water');
+          if (kEl) p.calorieGoal = Number(kEl.value) || 2400;
+          if (wEl) p.waterGoalMl = Number(wEl.value) || 3000;
+        }
+      };
+
+      const appEl = document.getElementById('app');
+      appEl.innerHTML = `
+        <div class="min-h-screen flex flex-col justify-between px-4 py-6 sm:px-8 max-w-2xl mx-auto">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-indigo-500 flex items-center justify-center font-extrabold text-slate-950 text-sm">Y</div>
+                <span class="font-extrabold tracking-tight text-lg text-white">YouVsYou</span>
+              </div>
+              <button type="button" id="btn-skip-onboarding" class="text-xs font-medium text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded-lg hover:bg-white/5 transition">
+                Pomiń i wejdź od razu →
+              </button>
+            </div>
+            <div class="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-emerald-400 to-indigo-500 transition-all duration-300" style="width:${pct}%"></div>
+            </div>
+          </div>
+
+          <div class="my-auto py-8">
+            <div class="glass-card rounded-3xl p-6 sm:p-10">
+              ${slideBody}
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between gap-4 pt-2">
+            <button type="button" id="btn-prev-slide" ${step === 0 ? 'disabled' : ''}
+              class="px-5 py-3 rounded-xl font-semibold text-sm border border-white/10 text-slate-300 hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none transition">
+              ← Wstecz
+            </button>
+            <button type="button" id="btn-next-slide"
+              class="px-7 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-500 to-emerald-400 text-slate-950 hover:brightness-110 shadow-lg shadow-emerald-500/20 transition">
+              ${step === totalSlides - 1 ? 'Uruchom YouVsYou ✓' : 'Dalej →'}
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('btn-prev-slide')?.addEventListener('click', () => {
+        syncCurrentSlideInput();
+        prevStep();
+      });
+
+      document.getElementById('btn-next-slide')?.addEventListener('click', () => {
+        syncCurrentSlideInput();
+        nextStep();
+      });
+
+      document.getElementById('btn-skip-onboarding')?.addEventListener('click', () => {
+        syncCurrentSlideInput();
+        finishOnboarding();
+      });
+
+      document.querySelectorAll('[data-pick-gender
