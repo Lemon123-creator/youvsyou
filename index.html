@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YouVsYou — Twój Tracker, Kalendarz i Asystent</title>
+  <title>YouVsYou — Twój Tracker, Kalendarz i Progres Siłowy</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,47 +13,87 @@
       darkMode: 'class',
       theme: {
         extend: {
-          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-          colors: {
-            obsidian: '#090b10',
-            surface: '#111520',
-            surface2: '#171c2b',
-            accent: '#10b981',
-            indigoGlow: '#6366f1'
-          }
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
         }
       }
     }
   </script>
   <style>
+    :root {
+      --bg-base: #090b10;
+      --bg-surface: rgba(17, 21, 32, 0.80);
+      --bg-surface-solid: #111520;
+      --bg-input: rgba(9, 12, 20, 0.92);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-1: #10b981;
+      --accent-2: #6366f1;
+      --accent-rgb: 16, 185, 129;
+      --accent2-rgb: 99, 102, 241;
+    }
+
     * { box-sizing: border-box; }
     body {
-      background-color: #090b10;
-      color: #f1f5f9;
+      background-color: var(--bg-base);
+      color: var(--text-main);
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       overflow-x: hidden;
+      transition: background-color 0.25s ease, color 0.25s ease;
     }
     .ambient-bg {
       background:
-        radial-gradient(circle at 12% 12%, rgba(16, 185, 129, 0.08), transparent 36%),
-        radial-gradient(circle at 88% 18%, rgba(99, 102, 241, 0.09), transparent 40%),
-        radial-gradient(circle at 50% 95%, rgba(14, 165, 233, 0.05), transparent 45%),
-        #090b10;
+        radial-gradient(circle at 12% 10%, rgba(var(--accent-rgb), 0.10), transparent 36%),
+        radial-gradient(circle at 88% 16%, rgba(var(--accent2-rgb), 0.10), transparent 40%),
+        radial-gradient(circle at 50% 95%, rgba(var(--accent-rgb), 0.05), transparent 45%),
+        var(--bg-base);
     }
     .glass-card {
-      background: rgba(17, 21, 32, 0.78);
+      background: var(--bg-surface);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(255, 255, 255, 0.07);
-      box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.65);
-    }
-    .glass-card-hover {
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.55);
       transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
     }
     .glass-card-hover:hover {
-      border-color: rgba(255, 255, 255, 0.15);
-      box-shadow: 0 16px 38px -12px rgba(0, 0, 0, 0.8);
+      border-color: rgba(var(--accent-rgb), 0.35);
+      transform: translateY(-1px);
     }
+    .accent-gradient {
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    }
+    .accent-bar {
+      background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+    }
+    .accent-text {
+      color: var(--accent-1);
+    }
+    .accent2-text {
+      color: var(--accent-2);
+    }
+    .accent-badge {
+      background-color: rgba(var(--accent-rgb), 0.15);
+      border: 1px solid rgba(var(--accent-rgb), 0.32);
+      color: var(--accent-1);
+    }
+    .accent-btn {
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      color: #ffffff;
+      box-shadow: 0 8px 24px -6px rgba(var(--accent-rgb), 0.45);
+      transition: filter 0.18s ease, transform 0.14s ease;
+    }
+    .accent-btn:hover { filter: brightness(1.08); }
+    .accent-btn:active { transform: scale(0.98); }
+
+    @keyframes viewFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .view-enter {
+      animation: viewFadeIn 0.24s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
     @keyframes slideInRight {
       from { opacity: 0; transform: translateX(22px); }
       to { opacity: 1; transform: translateX(0); }
@@ -61,6 +101,15 @@
     .slide-step {
       animation: slideInRight 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
+
+    @keyframes prGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.25); }
+      50% { box-shadow: 0 0 22px 2px rgba(245, 158, 11, 0.38); }
+    }
+    .pr-card-glow {
+      animation: prGlow 3s ease-in-out infinite;
+    }
+
     @keyframes waveShift {
       0% { transform: translateX(0); }
       100% { transform: translateX(-50%); }
@@ -68,23 +117,107 @@
     .wave-anim {
       animation: waveShift 5s linear infinite;
     }
+
+    /* Jasny tryb dzienny */
+    body.theme-light {
+      --bg-base: #f1f5f9;
+      --bg-surface: rgba(255, 255, 255, 0.88);
+      --bg-surface-solid: #ffffff;
+      --bg-input: #f8fafc;
+      --border-subtle: rgba(15, 23, 42, 0.10);
+      --text-main: #0f172a;
+      --text-muted: #475569;
+    }
+    body.theme-light .text-white { color: #0f172a !important; }
+    body.theme-light .text-slate-100 { color: #1e293b !important; }
+    body.theme-light .text-slate-200 { color: #334155 !important; }
+    body.theme-light .text-slate-300 { color: #475569 !important; }
+    body.theme-light .text-slate-400 { color: #64748b !important; }
+    body.theme-light .bg-slate-900,
+    body.theme-light .bg-slate-900\/90,
+    body.theme-light .bg-slate-950,
+    body.theme-light .bg-slate-950\/60 {
+      background-color: #f8fafc !important;
+    }
+    body.theme-light .border-white\/10,
+    body.theme-light .border-white\/15 {
+      border-color: rgba(15, 23, 42, 0.12) !important;
+    }
+    body.theme-light .bg-white\/5,
+    body.theme-light .bg-white\/\[0\.02\],
+    body.theme-light .bg-white\/\[0\.03\] {
+      background-color: rgba(15, 23, 42, 0.04) !important;
+    }
+    body.theme-light .glass-card {
+      box-shadow: 0 10px 28px -12px rgba(15, 23, 42, 0.14);
+    }
+
+    /* Tryb OLED */
+    body.theme-oled {
+      --bg-base: #000000;
+      --bg-surface: rgba(10, 12, 18, 0.90);
+      --bg-surface-solid: #0a0c12;
+    }
+
     ::-webkit-scrollbar { width: 7px; height: 7px; }
-    ::-webkit-scrollbar-track { background: #0c0f17; }
-    ::-webkit-scrollbar-thumb { background: #262e42; border-radius: 999px; }
-    ::-webkit-scrollbar-thumb:hover { background: #36415c; }
-    input[type="number"]::-webkit-inner-spin-button,
-    input[type="number"]::-webkit-outer-spin-button { opacity: 0.4; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 999px; }
   </style>
 </head>
-<body class="ambient-bg min-h-screen text-slate-100 antialiased selection:bg-emerald-500/30 selection:text-emerald-200">
+<body class="ambient-bg min-h-screen antialiased">
   <div id="app"></div>
 
   <script>
     // =========================================================================
-    // 1. STAŁE, POMOCNIKI DAT I FORMATOWANIA
+    // 1. STAŁE, MOTYWY KOLORYSTYCZNE I AWATARY
     // =========================================================================
-    const STORAGE_KEY = 'youvsyou_tracker_v2';
-    const BACKUP_NAME_KEY = 'YOUVSYOU_SESSION_BACKUP_V2';
+    const STORAGE_KEY = 'youvsyou_tracker_v3';
+    const BACKUP_NAME_KEY = 'YOUVSYOU_SESSION_BACKUP_V3';
+
+    const ACCENT_THEMES = [
+      {
+        id: 'emerald_indigo',
+        name: 'Szmaragd & Indygo',
+        desc: 'Domyślny klimat YouVsYou',
+        c1: '#10b981',
+        c2: '#6366f1',
+        rgb1: '16, 185, 129',
+        rgb2: '99, 102, 241'
+      },
+      {
+        id: 'cyan_cobalt',
+        name: 'Neonowy Cyjan & Kobalt',
+        desc: 'Chłodny fokus treningowy',
+        c1: '#06b6d4',
+        c2: '#3b82f6',
+        rgb1: '6, 182, 212',
+        rgb2: '59, 130, 246'
+      },
+      {
+        id: 'amber_copper',
+        name: 'Złoty Bursztyn & Miedź',
+        desc: 'Ciepły motyw wieczorny',
+        c1: '#f59e0b',
+        c2: '#ea580c',
+        rgb1: '245, 158, 11',
+        rgb2: '234, 88, 12'
+      },
+      {
+        id: 'crimson_violet',
+        name: 'Karmazyn & Fiolet',
+        desc: 'Tryb walki z samym sobą',
+        c1: '#f43f5e',
+        c2: '#8b5cf6',
+        rgb1: '244, 63, 94',
+        rgb2: '139, 92, 246'
+      }
+    ];
+
+    const BG_MODES = [
+      { id: 'dark', name: 'Ciemny Grafit' },
+      { id: 'oled', name: 'Czerń OLED' },
+      { id: 'light', name: 'Jasny Dzień' }
+    ];
 
     const USER_AVATARS = [
       {
@@ -92,17 +225,10 @@
         name: 'Cyber Fighter',
         tag: 'You vs You',
         svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="ua1" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#10b981"/><stop offset="100%" stop-color="#059669"/>
-            </linearGradient>
-          </defs>
-          <rect width="64" height="64" rx="18" fill="#0f172a"/>
-          <circle cx="32" cy="25" r="11" fill="url(#ua1)"/>
+          <defs><linearGradient id="ua1" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#10b981"/><stop offset="100%" stop-color="#059669"/></linearGradient></defs>
+          <rect width="64" height="64" rx="18" fill="#0f172a"/><circle cx="32" cy="25" r="11" fill="url(#ua1)"/>
           <path d="M14 55C14 44.5 22 38 32 38C42 38 50 44.5 50 55" fill="url(#ua1)" fill-opacity="0.9"/>
-          <path d="M23 24H41" stroke="#062e22" stroke-width="2.6" stroke-linecap="round"/>
-          <circle cx="28" cy="24" r="1.5" fill="#ecfdf5"/>
-          <circle cx="36" cy="24" r="1.5" fill="#ecfdf5"/>
+          <path d="M23 24H41" stroke="#062e22" stroke-width="2.6" stroke-linecap="round"/><circle cx="28" cy="24" r="1.5" fill="#ecfdf5"/><circle cx="36" cy="24" r="1.5" fill="#ecfdf5"/>
         </svg>`
       },
       {
@@ -110,13 +236,8 @@
         name: 'Wąsaty Dżentelmen',
         tag: 'Klasa & Styl',
         svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="ua2" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/>
-            </linearGradient>
-          </defs>
-          <rect width="64" height="64" rx="18" fill="#181512"/>
-          <circle cx="32" cy="26" r="10.5" fill="#fde68a"/>
+          <defs><linearGradient id="ua2" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/></linearGradient></defs>
+          <rect width="64" height="64" rx="18" fill="#181512"/><circle cx="32" cy="26" r="10.5" fill="#fde68a"/>
           <path d="M15 55C15 45 22.5 39 32 39C41.5 39 49 45 49 55" fill="url(#ua2)"/>
           <path d="M21 21C24 15 40 15 43 21" stroke="url(#ua2)" stroke-width="3.2" stroke-linecap="round"/>
           <path d="M25 30.5C27.5 28.5 30.5 29 32 30.5C33.5 29 36.5 28.5 39 30.5" stroke="#451a03" stroke-width="2.4" stroke-linecap="round"/>
@@ -127,17 +248,10 @@
         name: 'Lifting Pro',
         tag: 'Siła & Forma',
         svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="ua3" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#8b5cf6"/>
-            </linearGradient>
-          </defs>
-          <rect width="64" height="64" rx="18" fill="#111326"/>
-          <circle cx="32" cy="23" r="9.5" fill="#e0e7ff"/>
+          <defs><linearGradient id="ua3" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
+          <rect width="64" height="64" rx="18" fill="#111326"/><circle cx="32" cy="23" r="9.5" fill="#e0e7ff"/>
           <path d="M11 55C12 43 20.5 37 32 37C43.5 37 52 43 53 55" fill="url(#ua3)"/>
-          <rect x="14" y="45" width="36" height="4" rx="2" fill="#0f172a" fill-opacity="0.45"/>
-          <circle cx="15" cy="47" r="4.5" fill="#c7d2fe"/>
-          <circle cx="49" cy="47" r="4.5" fill="#c7d2fe"/>
+          <rect x="14" y="45" width="36" height="4" rx="2" fill="#0f172a" fill-opacity="0.45"/><circle cx="15" cy="47" r="4.5" fill="#c7d2fe"/><circle cx="49" cy="47" r="4.5" fill="#c7d2fe"/>
         </svg>`
       },
       {
@@ -145,13 +259,8 @@
         name: 'Nocny Fokus',
         tag: 'Dyscyplina',
         svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="ua4" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#3b82f6"/>
-            </linearGradient>
-          </defs>
-          <rect width="64" height="64" rx="18" fill="#091322"/>
-          <circle cx="32" cy="25" r="10" fill="url(#ua4)"/>
+          <defs><linearGradient id="ua4" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient></defs>
+          <rect width="64" height="64" rx="18" fill="#091322"/><circle cx="32" cy="25" r="10" fill="url(#ua4)"/>
           <path d="M15 55C16 44.5 23 39 32 39C41 39 48 44.5 49 55" fill="#1e293b"/>
           <path d="M23 40L32 48L41 40" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>`
@@ -161,15 +270,9 @@
         name: 'Szmaragdowy Lider',
         tag: 'Progres',
         svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="ua5" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#0ea5e9"/>
-            </linearGradient>
-          </defs>
-          <rect width="64" height="64" rx="18" fill="#0a1919"/>
-          <polygon points="32,12 46,24 41,42 23,42 18,24" fill="url(#ua5)" fill-opacity="0.25" stroke="url(#ua5)" stroke-width="2"/>
-          <circle cx="32" cy="26" r="7.5" fill="#f8fafc"/>
-          <path d="M17 54C18.5 45.5 24.5 41 32 41C39.5 41 45.5 45.5 47 54" fill="url(#ua5)"/>
+          <defs><linearGradient id="ua5" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#0ea5e9"/></linearGradient></defs>
+          <rect width="64" height="64" rx="18" fill="#0a1919"/><polygon points="32,12 46,24 41,42 23,42 18,24" fill="url(#ua5)" fill-opacity="0.25" stroke="url(#ua5)" stroke-width="2"/>
+          <circle cx="32" cy="26" r="7.5" fill="#f8fafc"/><path d="M17 54C18.5 45.5 24.5 41 32 41C39.5 41 45.5 45.5 47 54" fill="url(#ua5)"/>
         </svg>`
       },
       {
@@ -177,10 +280,8 @@
         name: 'Minimalista',
         tag: 'Czysty Plan',
         svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="64" height="64" rx="18" fill="#171b26"/>
-          <circle cx="32" cy="25" r="9.5" fill="#cbd5e1"/>
-          <path d="M16 54C17 44.5 23.5 39.5 32 39.5C40.5 39.5 47 44.5 48 54" fill="#475569"/>
-          <circle cx="46" cy="18" r="4" fill="#10b981"/>
+          <rect width="64" height="64" rx="18" fill="#171b26"/><circle cx="32" cy="25" r="9.5" fill="#cbd5e1"/>
+          <path d="M16 54C17 44.5 23.5 39.5 32 39.5C40.5 39.5 47 44.5 48 54" fill="#475569"/><circle cx="46" cy="18" r="4" fill="#10b981"/>
         </svg>`
       }
     ];
@@ -189,80 +290,101 @@
       {
         id: 'core_ai',
         name: 'Core AI',
-        tag: 'Asystent YouVsYou',
         svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="ai1" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#10b981"/><stop offset="100%" stop-color="#6366f1"/>
-            </linearGradient>
-          </defs>
-          <rect width="64" height="64" rx="18" fill="#0d1220"/>
-          <rect x="15" y="18" width="34" height="28" rx="11" fill="url(#ai1)" fill-opacity="0.2" stroke="url(#ai1)" stroke-width="2.2"/>
-          <circle cx="26" cy="32" r="3.4" fill="#34d399"/>
-          <circle cx="38" cy="32" r="3.4" fill="#818cf8"/>
-          <path d="M32 10V18" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"/>
-          <circle cx="32" cy="9" r="3" fill="#10b981"/>
+          <defs><linearGradient id="ai1" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#10b981"/><stop offset="100%" stop-color="#6366f1"/></linearGradient></defs>
+          <rect width="64" height="64" rx="18" fill="#0d1220"/><rect x="15" y="18" width="34" height="28" rx="11" fill="url(#ai1)" fill-opacity="0.2" stroke="url(#ai1)" stroke-width="2.2"/>
+          <circle cx="26" cy="32" r="3.4" fill="#34d399"/><circle cx="38" cy="32" r="3.4" fill="#818cf8"/><path d="M32 10V18" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"/><circle cx="32" cy="9" r="3" fill="#10b981"/>
         </svg>`
       },
       {
         id: 'cyber_bot',
         name: 'Cyber Bot',
-        tag: 'Szybka Analiza',
         svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="ai2" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#ec4899"/>
-            </linearGradient>
-          </defs>
-          <rect width="64" height="64" rx="18" fill="#150f24"/>
-          <rect x="14" y="19" width="36" height="26" rx="8" fill="url(#ai2)"/>
-          <rect x="20" y="27" width="24" height="9" rx="4.5" fill="#090b10"/>
-          <circle cx="26" cy="31.5" r="2" fill="#f472b6"/>
-          <circle cx="38" cy="31.5" r="2" fill="#c084fc"/>
+          <defs><linearGradient id="ai2" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#ec4899"/></linearGradient></defs>
+          <rect width="64" height="64" rx="18" fill="#150f24"/><rect x="14" y="19" width="36" height="26" rx="8" fill="url(#ai2)"/>
+          <rect x="20" y="27" width="24" height="9" rx="4.5" fill="#090b10"/><circle cx="26" cy="31.5" r="2" fill="#f472b6"/><circle cx="38" cy="31.5" r="2" fill="#c084fc"/>
         </svg>`
       },
       {
         id: 'neon_core',
         name: 'Neonowy Rdzeń',
-        tag: 'Inteligentny Log',
         svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="ai3" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#10b981"/>
-            </linearGradient>
-          </defs>
-          <rect width="64" height="64" rx="18" fill="#07181d"/>
-          <circle cx="32" cy="32" r="15" stroke="url(#ai3)" stroke-width="2.5" stroke-dasharray="6 4"/>
-          <circle cx="32" cy="32" r="7" fill="url(#ai3)"/>
+          <defs><linearGradient id="ai3" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#10b981"/></linearGradient></defs>
+          <rect width="64" height="64" rx="18" fill="#07181d"/><circle cx="32" cy="32" r="15" stroke="url(#ai3)" stroke-width="2.5" stroke-dasharray="6 4"/><circle cx="32" cy="32" r="7" fill="url(#ai3)"/>
         </svg>`
       },
       {
         id: 'quantum_guide',
         name: 'Kwantowy Przewodnik',
-        tag: 'Planowanie',
         svg: `<svg viewBox="0 0 64 64" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="ai4" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#a78bfa"/>
-            </linearGradient>
-          </defs>
-          <rect width="64" height="64" rx="18" fill="#0e1426"/>
-          <path d="M32 13L47 32L32 51L17 32L32 13Z" stroke="url(#ai4)" stroke-width="2.4" fill="url(#ai4)" fill-opacity="0.14"/>
-          <circle cx="32" cy="32" r="4.5" fill="#e0e7ff"/>
+          <defs><linearGradient id="ai4" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#a78bfa"/></linearGradient></defs>
+          <rect width="64" height="64" rx="18" fill="#0e1426"/><path d="M32 13L47 32L32 51L17 32L32 13Z" stroke="url(#ai4)" stroke-width="2.4" fill="url(#ai4)" fill-opacity="0.14"/><circle cx="32" cy="32" r="4.5" fill="#e0e7ff"/>
         </svg>`
       }
     ];
 
-    function getUserAvatar(id) {
-      return USER_AVATARS.find(a => a.id === id) || USER_AVATARS[0];
-    }
-    function getAiAvatar(id) {
-      return AI_AVATARS.find(a => a.id === id) || AI_AVATARS[0];
+    function getUserAvatar(id) { return USER_AVATARS.find(a => a.id === id) || USER_AVATARS[0]; }
+    function getAiAvatar(id) { return AI_AVATARS.find(a => a.id === id) || AI_AVATARS[0]; }
+    function getAccentTheme(id) { return ACCENT_THEMES.find(t => t.id === id) || ACCENT_THEMES[0]; }
+
+    function applyThemeVariables() {
+      const accent = getAccentTheme(state.profile.accentTheme);
+      const root = document.documentElement;
+      root.style.setProperty('--accent-1', accent.c1);
+      root.style.setProperty('--accent-2', accent.c2);
+      root.style.setProperty('--accent-rgb', accent.rgb1);
+      root.style.setProperty('--accent2-rgb', accent.rgb2);
+
+      const bgMode = state.profile.bgMode || 'dark';
+      document.body.classList.remove('theme-light', 'theme-oled');
+      if (bgMode === 'light') {
+        document.body.classList.add('theme-light');
+        document.documentElement.classList.remove('dark');
+      } else {
+        document.documentElement.classList.add('dark');
+        if (bgMode === 'oled') document.body.classList.add('theme-oled');
+      }
     }
 
+    // =========================================================================
+    // 2. DATY, FORMATOWANIE I DOMYŚLNY STAN
+    // =========================================================================
     function pad2(n) { return String(n).padStart(2, '0'); }
     function toDateKey(dateObj) {
-      return `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}-${pad2(dateObj.getDate())}`; } function parseDateKey(key) { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d); } function addDays(dateKey, delta) { const d = parseDateKey(dateKey); d.setDate(d.getDate() + delta); return toDateKey(d); } function formatPolishDate(dateKey) { const d = parseDateKey(dateKey); return d.toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); } function formatShortDate(dateKey) { const d = parseDateKey(dateKey); return d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }); } function daysBetween(startKey, endKey) { const a = parseDateKey(startKey); const b = parseDateKey(endKey); const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate()); const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()); return Math.round((utcB - utcA) / 86400000); } function parseWeightInput(val) { if (typeof val === 'number') return Number.isFinite(val) ? Number(val.toFixed(2)) : 0; const cleaned = String(val).trim().replace(',', '.').replace(/[^0-9.]/g, ''); const num = parseFloat(cleaned); return Number.isFinite(num) ? Number(num.toFixed(2)) : 0; } function formatWeight(val) { return `${parseWeightInput(val).toFixed(2)} kg`;
+      return `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}-${pad2(dateObj.getDate())}`;
+    }
+    function parseDateKey(key) {
+      const [y, m, d] = key.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+    function addDays(dateKey, delta) {
+      const d = parseDateKey(dateKey);
+      d.setDate(d.getDate() + delta);
+      return toDateKey(d);
+    }
+    function formatPolishDate(dateKey) {
+      const d = parseDateKey(dateKey);
+      return d.toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    }
+    function formatShortDate(dateKey) {
+      const d = parseDateKey(dateKey);
+      return d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' });
+    }
+    function daysBetween(startKey, endKey) {
+      const a = parseDateKey(startKey);
+      const b = parseDateKey(endKey);
+      const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+      const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+      return Math.round((utcB - utcA) / 86400000);
+    }
+    function parseWeightInput(val) {
+      if (typeof val === 'number') return Number.isFinite(val) ? Number(val.toFixed(2)) : 0;
+      const cleaned = String(val).trim().replace(',', '.').replace(/[^0-9.]/g, '');
+      const num = parseFloat(cleaned);
+      return Number.isFinite(num) ? Number(num.toFixed(2)) : 0;
+    }
+    function formatWeight(val) {
+      return `${parseWeightInput(val).toFixed(2)} kg`;
     }
 
     const TODAY_KEY = toDateKey(new Date());
@@ -286,18 +408,24 @@
           currentWeight: startWeight,
           goalWeight,
           goalType: 'recomp',
-          calorieGoal: 2400,
+          calorieGoal: 2450,
+          proteinGoal: 175,
+          carbsGoal: 265,
+          fatGoal: 75,
           waterGoalMl: 3000,
+          trainingWaterBonusMl: 500,
           userAvatar: 'cyber_fighter',
           aiAvatar: 'core_ai',
+          accentTheme: 'emerald_indigo',
+          bgMode: 'dark',
           geminiApiKey: ''
         },
         habits: [
-          { id: 'h_creatine', title: 'Kreatyna', icon: '⚡' },
-          { id: 'h_water', title: 'Woda (cel dzienny)', icon: '💧' },
-          { id: 'h_teeth_am', title: 'Mycie zębów rano', icon: '🪥' },
-          { id: 'h_teeth_pm', title: 'Mycie zębów wieczorem', icon: '🌙' },
-          { id: 'h_mustache', title: 'Dbanie o wąsa rano', icon: '🧔' }
+          { id: 'h_creatine', title: 'Kreatyna', icon: '⚡', timeOfDay: 'morning' },
+          { id: 'h_water', title: 'Woda (cel dzienny)', icon: '💧', timeOfDay: 'all' },
+          { id: 'h_teeth_am', title: 'Mycie zębów rano', icon: '🪥', timeOfDay: 'morning' },
+          { id: 'h_mustache', title: 'Dbanie o wąsa rano', icon: '🧔', timeOfDay: 'morning' },
+          { id: 'h_teeth_pm', title: 'Mycie zębów wieczorem', icon: '🌙', timeOfDay: 'evening' }
         ],
         habitCompletions: {
           [TODAY_KEY]: {}
@@ -309,7 +437,8 @@
             icon: '🏋️',
             type: 'every_n_days',
             intervalDays: 3,
-            anchorDate: TODAY_KEY
+            anchorDate: TODAY_KEY,
+            isGymRule: true
           },
           {
             id: 'r_flowers_monthly',
@@ -322,11 +451,152 @@
         recurringCompletions: {},
         tasksByDate: {
           [TODAY_KEY]: [
-            { id: 't_1', title: 'Sprawdzić plan dnia w YouVsYou', done: false }
+            { id: 't_1', title: 'Sprawdzić podsumowanie dnia w YouVsYou', done: false }
           ]
         },
         events: [
-          { id: 'e_1', title: 'Urodziny dziewczyny', date: `${currentMonth}-14`, recurringYearly: true, category: 'Bliscy' } ], caloriesByDate: { [TODAY_KEY]: [] }, sleepByDate: { [d1]: { hours: 7.5, quality: 'Dobry', note: '' }, [d2]: { hours: 6.5, quality: 'Średni', note: '' }, [d3]: { hours: 8.0, quality: 'Świetny', note: '' } }, waterByDate: { [TODAY_KEY]: [] }, weightLogs: [ { id: 'w_1', date: d3, weight: Number((startWeight + 0.6).toFixed(2)) }, { id: 'w_2', date: d2, weight: Number((startWeight + 0.3).toFixed(2)) }, { id: 'w_3', date: TODAY_KEY, weight: startWeight } ], aiMessages: [ { role: 'assistant', text: 'Cześć! Jestem Twoim asystentem w **YouVsYou**. Napisz naturalnie co zrobiłeś, zjadłeś, wypiłeś albo zaplanowałeś — np. *"wypiłem 500 ml wody i wziąłem kreatynę"*, *"ważę dziś 81.50 kg"* albo *"dodaj nawyk rozciąganie wieczorem"*.', applied: [] } ] }; }  function readBackupFromWindow() { try { if (window.name && window.name.startsWith(BACKUP_NAME_KEY)) { const raw = window.name.slice(BACKUP_NAME_KEY.length); const parsed = JSON.parse(raw); if (parsed && typeof parsed === 'object') return parsed; } } catch (_) {} return null; }  function writeBackupToWindow(data) { try { const serialized = JSON.stringify(data); if (serialized.length < 1500000) { window.name = BACKUP_NAME_KEY + serialized; } } catch (_) {} }  let memoryFallbackState = null;  function loadState() { const base = getDefaultData(); let parsed = null; try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) parsed = JSON.parse(raw); } catch (_) {}  const winBackup = readBackupFromWindow(); if (!parsed && winBackup) parsed = winBackup; if (!parsed && memoryFallbackState) parsed = memoryFallbackState;  if (!parsed \vert{}\vert{} typeof parsed !== 'object') return base;  const mergedProfile = { ...base.profile, ...(parsed.profile \vert{}\vert{} {}) }; mergedProfile.startWeight = parseWeightInput(mergedProfile.startWeight ?? base.profile.startWeight); mergedProfile.currentWeight = parseWeightInput(mergedProfile.currentWeight ?? mergedProfile.startWeight); mergedProfile.goalWeight = parseWeightInput(mergedProfile.goalWeight ?? base.profile.goalWeight); mergedProfile.userAvatar = mergedProfile.userAvatar \vert{}\vert{} base.profile.userAvatar; mergedProfile.aiAvatar = mergedProfile.aiAvatar \vert{}\vert{} base.profile.aiAvatar; mergedProfile.geminiApiKey = mergedProfile.geminiApiKey \vert{}\vert{} '';  const merged = { ...base, ...parsed, onboardingCompleted: Boolean(parsed.onboardingCompleted), profile: mergedProfile, habits: Array.isArray(parsed.habits) && parsed.habits.length ? parsed.habits : base.habits, habitCompletions: parsed.habitCompletions && typeof parsed.habitCompletions === 'object' ? parsed.habitCompletions : base.habitCompletions, recurringRules: Array.isArray(parsed.recurringRules) && parsed.recurringRules.length ? parsed.recurringRules : base.recurringRules, recurringCompletions: parsed.recurringCompletions && typeof parsed.recurringCompletions === 'object' ? parsed.recurringCompletions : {}, tasksByDate: parsed.tasksByDate && typeof parsed.tasksByDate === 'object' ? parsed.tasksByDate : base.tasksByDate, events: Array.isArray(parsed.events) ? parsed.events : base.events, caloriesByDate: parsed.caloriesByDate && typeof parsed.caloriesByDate === 'object' ? parsed.caloriesByDate : base.caloriesByDate, sleepByDate: parsed.sleepByDate && typeof parsed.sleepByDate === 'object' ? parsed.sleepByDate : base.sleepByDate, waterByDate: parsed.waterByDate && typeof parsed.waterByDate === 'object' ? parsed.waterByDate : base.waterByDate, weightLogs: Array.isArray(parsed.weightLogs) && parsed.weightLogs.length ? parsed.weightLogs.map(w => ({ ...w, weight: parseWeightInput(w.weight) })) : base.weightLogs, aiMessages: Array.isArray(parsed.aiMessages) && parsed.aiMessages.length ? parsed.aiMessages : base.aiMessages };  memoryFallbackState = merged; writeBackupToWindow(merged); return merged; }  function saveState() { memoryFallbackState = state; writeBackupToWindow(state); try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {} }  // ========================================================================= // 2. LOGIKA CYKLICZNYCH PRZYPOMNIEŃ, WODY I KALORII // ========================================================================= function getRuleStatusForDate(rule, dateKey) { if (rule.type === 'every_n_days') { const interval = Math.max(1, Number(rule.intervalDays) \vert{}\vert{} 3); const anchor = rule.anchorDate \vert{}\vert{} TODAY_KEY; const diff = daysBetween(anchor, dateKey); const mod = ((diff \% interval) + interval) \% interval; const isDue = mod === 0; const daysUntil = isDue ? 0 : (interval - mod); return { isDue, daysUntil, label: isDue ? 'Dzisiaj wypada!' : (daysUntil === 1 ? 'Za 1 dzień' : `Za ${daysUntil} dni`)
+          { id: 'e_1', title: 'Urodziny dziewczyny', date: `${currentMonth}-14`, recurringYearly: true, category: 'Bliscy' }
+        ],
+        caloriesByDate: {
+          [TODAY_KEY]: []
+        },
+        sleepByDate: {
+          [d1]: { hours: 7.5, quality: 'Dobry', energy: 4, note: '' },
+          [d2]: { hours: 6.5, quality: 'Średni', energy: 3, note: '' },
+          [d3]: { hours: 8.0, quality: 'Świetny', energy: 5, note: '' }
+        },
+        waterByDate: {
+          [TODAY_KEY]: []
+        },
+        weightLogs: [
+          { id: 'w_1', date: d3, weight: Number((startWeight + 0.6).toFixed(2)) },
+          { id: 'w_2', date: d2, weight: Number((startWeight + 0.3).toFixed(2)) },
+          { id: 'w_3', date: TODAY_KEY, weight: startWeight }
+        ],
+        workouts: [
+          {
+            id: 'wo_demo_1',
+            date: addDays(TODAY_KEY, -3),
+            title: 'Trening Siłowy A',
+            notes: 'Dobre tempo, pełna kontrola',
+            exercises: [
+              {
+                name: 'Wyciskanie sztangi na ławce płaskiej',
+                sets: [
+                  { weight: 80, reps: 8 },
+                  { weight: 82.5, reps: 7 },
+                  { weight: 82.5, reps: 6 }
+                ]
+              },
+              {
+                name: 'Wiosłowanie sztangą w opadzie',
+                sets: [
+                  { weight: 70, reps: 10 },
+                  { weight: 75, reps: 8 },
+                  { weight: 75, reps: 8 }
+                ]
+              }
+            ]
+          }
+        ],
+        aiMessages: [
+          {
+            role: 'assistant',
+            text: 'Cześć! Jestem Twoim asystentem w **YouVsYou**. Możesz wpisać codzienne rzeczy (np. *"wypiłem 500 ml wody i wziąłem kreatynę"*, *"zjadłem kurczaka z ryżem 620 kcal 45g białka 70g węgli 12g tłuszczu"*) albo wrzucić trening po siłowni (np. *"Trening: Wyciskanie na ławce: 85kg x 8, 85kg x 7; Podciąganie: 10kg x 8, 10kg x 8"*).',
+            applied: []
+          }
+        ]
+      };
+    }
+
+    function readBackupFromWindow() {
+      try {
+        if (window.name && window.name.startsWith(BACKUP_NAME_KEY)) {
+          const raw = window.name.slice(BACKUP_NAME_KEY.length);
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') return parsed;
+        }
+      } catch (_) {}
+      return null;
+    }
+
+    function writeBackupToWindow(data) {
+      try {
+        const serialized = JSON.stringify(data);
+        if (serialized.length < 1800000) window.name = BACKUP_NAME_KEY + serialized;
+      } catch (_) {}
+    }
+
+    let memoryFallbackState = null;
+
+    function loadState() {
+      const base = getDefaultData();
+      let parsed = null;
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('youvsyou_tracker_v2');
+        if (raw) parsed = JSON.parse(raw);
+      } catch (_) {}
+
+      const winBackup = readBackupFromWindow();
+      if (!parsed && winBackup) parsed = winBackup;
+      if (!parsed && memoryFallbackState) parsed = memoryFallbackState;
+
+      if (!parsed || typeof parsed !== 'object') return base;
+
+      const mergedProfile = { ...base.profile, ...(parsed.profile || {}) };
+      mergedProfile.startWeight = parseWeightInput(mergedProfile.startWeight ?? base.profile.startWeight);
+      mergedProfile.currentWeight = parseWeightInput(mergedProfile.currentWeight ?? mergedProfile.startWeight);
+      mergedProfile.goalWeight = parseWeightInput(mergedProfile.goalWeight ?? base.profile.goalWeight);
+
+      const merged = {
+        ...base,
+        ...parsed,
+        onboardingCompleted: Boolean(parsed.onboardingCompleted),
+        profile: mergedProfile,
+        habits: Array.isArray(parsed.habits) && parsed.habits.length ? parsed.habits : base.habits,
+        habitCompletions: parsed.habitCompletions && typeof parsed.habitCompletions === 'object' ? parsed.habitCompletions : base.habitCompletions,
+        recurringRules: Array.isArray(parsed.recurringRules) && parsed.recurringRules.length ? parsed.recurringRules : base.recurringRules,
+        recurringCompletions: parsed.recurringCompletions && typeof parsed.recurringCompletions === 'object' ? parsed.recurringCompletions : {},
+        tasksByDate: parsed.tasksByDate && typeof parsed.tasksByDate === 'object' ? parsed.tasksByDate : base.tasksByDate,
+        events: Array.isArray(parsed.events) ? parsed.events : base.events,
+        caloriesByDate: parsed.caloriesByDate && typeof parsed.caloriesByDate === 'object' ? parsed.caloriesByDate : base.caloriesByDate,
+        sleepByDate: parsed.sleepByDate && typeof parsed.sleepByDate === 'object' ? parsed.sleepByDate : base.sleepByDate,
+        waterByDate: parsed.waterByDate && typeof parsed.waterByDate === 'object' ? parsed.waterByDate : base.waterByDate,
+        weightLogs: Array.isArray(parsed.weightLogs) && parsed.weightLogs.length
+          ? parsed.weightLogs.map(w => ({ ...w, weight: parseWeightInput(w.weight) }))
+          : base.weightLogs,
+        workouts: Array.isArray(parsed.workouts) ? parsed.workouts : base.workouts,
+        aiMessages: Array.isArray(parsed.aiMessages) && parsed.aiMessages.length ? parsed.aiMessages : base.aiMessages
+      };
+
+      memoryFallbackState = merged;
+      writeBackupToWindow(merged);
+      return merged;
+    }
+
+    function saveState() {
+      memoryFallbackState = state;
+      writeBackupToWindow(state);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (_) {}
+    }
+
+    // =========================================================================
+    // 3. LOGIKA CYKLI, DNI TRENINGOWYCH, KALKULATORÓW I ANALIZY SIŁOWNI
+    // =========================================================================
+    function getRuleStatusForDate(rule, dateKey) {
+      if (rule.type === 'every_n_days') {
+        const interval = Math.max(1, Number(rule.intervalDays) || 3);
+        const anchor = rule.anchorDate || TODAY_KEY;
+        const diff = daysBetween(anchor, dateKey);
+        const mod = ((diff % interval) + interval) % interval;
+        const isDue = mod === 0;
+        const daysUntil = isDue ? 0 : (interval - mod);
+        return {
+          isDue,
+          daysUntil,
+          label: isDue ? 'Dzisiaj wypada!' : (daysUntil === 1 ? 'Za 1 dzień' : `Za ${daysUntil} dni`)
         };
       }
       if (rule.type === 'monthly_day') {
@@ -346,10 +616,24 @@
         return {
           isDue,
           daysUntil,
-          label: isDue ? `Dzisiaj (${targetDay}. dzień miesiąca)` : `${targetDay}. każdego miesiąca (za ${daysUntil} dni)`
+          label: isDue ? `Dzisiaj (${targetDay}. dzień miesiąca)` : `${targetDay}. dnia miesiąca (za ${daysUntil} dni)`
         };
       }
       return { isDue: false, daysUntil: 0, label: '' };
+    }
+
+    function isTrainingDay(dateKey) {
+      const hasLoggedWorkout = (state.workouts || []).some(w => w.date === dateKey);
+      if (hasLoggedWorkout) return true;
+      const gymRule = (state.recurringRules || []).find(r => r.isGymRule || r.title.toLowerCase().includes('siłown'));
+      if (gymRule && getRuleStatusForDate(gymRule, dateKey).isDue) return true;
+      return false;
+    }
+
+    function getEffectiveWaterGoal(dateKey) {
+      const base = Number(state.profile.waterGoalMl) || 3000;
+      const bonus = Number(state.profile.trainingWaterBonusMl) || 500;
+      return isTrainingDay(dateKey) ? base + bonus : base;
     }
 
     function isRuleDone(ruleId, dateKey) {
@@ -372,11 +656,9 @@
       const waterHabit = state.habits.find(h => h.id === 'h_water' || h.title.toLowerCase().includes('woda'));
       if (!waterHabit) return;
       const total = getWaterTotal(dateKey);
-      const goal = Number(state.profile.waterGoalMl) || 3000;
+      const goal = getEffectiveWaterGoal(dateKey);
       if (!state.habitCompletions[dateKey]) state.habitCompletions[dateKey] = {};
-      if (total >= goal) {
-        state.habitCompletions[dateKey][waterHabit.id] = true;
-      }
+      if (total >= goal) state.habitCompletions[dateKey][waterHabit.id] = true;
     }
 
     function addWaterEntry(dateKey, ml, source = 'Ręcznie') {
@@ -400,20 +682,26 @@
       return items.reduce((acc, it) => {
         acc.kcal += Number(it.kcal) || 0;
         acc.protein += Number(it.protein) || 0;
+        acc.carbs += Number(it.carbs) || 0;
+        acc.fat += Number(it.fat) || 0;
         return acc;
-      }, { kcal: 0, protein: 0 });
+      }, { kcal: 0, protein: 0, carbs: 0, fat: 0 });
     }
 
-    function addMealEntry(dateKey, name, kcal, protein = 0, mealType = 'Posiłek') {
+    function addMealEntry(dateKey, name, kcal, protein = 0, carbs = 0, fat = 0, mealType = 'Posiłek') {
       const cleanName = (name || 'Posiłek').trim();
       const cleanKcal = Math.max(0, Math.round(Number(kcal) || 0));
       const cleanProtein = Math.max(0, Math.round(Number(protein) || 0));
+      const cleanCarbs = Math.max(0, Math.round(Number(carbs) || 0));
+      const cleanFat = Math.max(0, Math.round(Number(fat) || 0));
       if (!state.caloriesByDate[dateKey]) state.caloriesByDate[dateKey] = [];
       state.caloriesByDate[dateKey].push({
         id: 'meal_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
         name: cleanName,
         kcal: cleanKcal,
         protein: cleanProtein,
+        carbs: cleanCarbs,
+        fat: cleanFat,
         mealType
       });
       saveState();
@@ -423,13 +711,10 @@
       const w = parseWeightInput(weightVal);
       if (w <= 0) return;
       state.profile.currentWeight = w;
-      if (!state.profile.startWeight || state.profile.startWeight <= 0) {
-        state.profile.startWeight = w;
-      }
+      if (!state.profile.startWeight || state.profile.startWeight <= 0) state.profile.startWeight = w;
       const existingIdx = state.weightLogs.findIndex(item => item.date === dateKey);
-      if (existingIdx >= 0) {
-        state.weightLogs[existingIdx].weight = w;
-      } else {
+      if (existingIdx >= 0) state.weightLogs[existingIdx].weight = w;
+      else {
         state.weightLogs.push({
           id: 'w_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
           date: dateKey,
@@ -440,22 +725,271 @@
       saveState();
     }
 
-    function suggestTargets(profile) {
+    function calculateNutritionTargets(profile) {
       const weight = parseWeightInput(profile.currentWeight) || 80;
-      const height = Number(profile.heightCm) || 178;
-      const age = Number(profile.age) || 24;
+      const height = Number(profile.heightCm) || 180;
+      const age = Number(profile.age) || 22;
       const sexOffset = profile.gender === 'female' ? -161 : 5;
-      const bmr = 10 * weight + 6.25 * height - 5 * age + sexOffset;
-      let tdee = bmr * 1.45;
-      if (profile.goalType === 'cut') tdee -= 350;
-      if (profile.goalType === 'bulk') tdee += 300;
-      const calorieGoal = Math.max(1400, Math.round(tdee / 50) * 50);
+      const bmr = Math.round(10 * weight + 6.25 * height - 5 * age + sexOffset);
+      let tdee = Math.round(bmr * 1.50);
+      let calorieGoal = tdee;
+      if (profile.goalType === 'cut') calorieGoal = tdee - 350;
+      if (profile.goalType === 'bulk') calorieGoal = tdee + 300;
+      calorieGoal = Math.max(1400, Math.round(calorieGoal / 25) * 25);
+
+      const proteinMult = profile.goalType === 'cut' ? 2.1 : 1.9;
+      const proteinGoal = Math.round(weight * proteinMult);
+      const fatGoal = Math.round(weight * 0.85);
+      const remainingKcal = Math.max(200, calorieGoal - (proteinGoal * 4 + fatGoal * 9));
+      const carbsGoal = Math.round(remainingKcal / 4);
       const waterGoalMl = Math.max(2000, Math.round((weight * 35) / 250) * 250);
-      return { calorieGoal, waterGoalMl };
+
+      return { bmr, tdee, calorieGoal, proteinGoal, carbsGoal, fatGoal, waterGoalMl };
+    }
+
+    // --- Analiza treningów, 1RM (wzór Epley), Rekordy PR i Plan na kolejną sesję ---
+    function estimate1RM(weight, reps) {
+      const w = Number(weight) || 0;
+      const r = Number(reps) || 0;
+      if (w <= 0 || r <= 0) return 0;
+      if (r === 1) return Number(w.toFixed(1));
+      return Number((w * (1 + r / 30)).toFixed(1));
+    }
+
+    function normalizeExerciseKey(name) {
+      return String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    function getExerciseAnalytics() {
+      const sortedWorkouts = [...(state.workouts || [])].sort((a, b) => a.date.localeCompare(b.date));
+      const map = new Map();
+
+      for (const wo of sortedWorkouts) {
+        for (const ex of (wo.exercises || [])) {
+          const key = normalizeExerciseKey(ex.name);
+          if (!key) continue;
+          if (!map.has(key)) {
+            map.set(key, {
+              name: ex.name.trim(),
+              sessions: [],
+              bestWeight: 0,
+              bestWeightReps: 0,
+              bestWeightDate: '',
+              best1RM: 0,
+              best1RMDate: '',
+              prevBest1RM: 0,
+              isRecentPR: false
+            });
+          }
+          const entry = map.get(key);
+          let sessionMaxW = 0;
+          let sessionMaxWReps = 0;
+          let sessionBest1RM = 0;
+          let sessionTonnage = 0;
+
+          for (const s of (ex.sets || [])) {
+            const w = Number(s.weight) || 0;
+            const r = Number(s.reps) || 0;
+            sessionTonnage += w * r;
+            const e1rm = estimate1RM(w, r);
+            if (e1rm > sessionBest1RM) sessionBest1RM = e1rm;
+            if (w > sessionMaxW || (w === sessionMaxW && r > sessionMaxWReps)) {
+              sessionMaxW = w;
+              sessionMaxWReps = r;
+            }
+          }
+
+          if (sessionBest1RM > entry.best1RM) {
+            entry.prevBest1RM = entry.best1RM;
+            entry.best1RM = sessionBest1RM;
+            entry.best1RMDate = wo.date;
+          }
+          if (sessionMaxW > entry.bestWeight || (sessionMaxW === entry.bestWeight && sessionMaxWReps > entry.bestWeightReps)) {
+            entry.bestWeight = sessionMaxW;
+            entry.bestWeightReps = sessionMaxWReps;
+            entry.bestWeightDate = wo.date;
+          }
+
+          entry.sessions.push({
+            date: wo.date,
+            sets: ex.sets || [],
+            maxWeight: sessionMaxW,
+            maxWeightReps: sessionMaxWReps,
+            best1RM: sessionBest1RM,
+            tonnage: Math.round(sessionTonnage)
+          });
+        }
+      }
+
+      const lastSleep = state.sleepByDate[TODAY_KEY] || state.sleepByDate[addDays(TODAY_KEY, -1)];
+      const lowRecovery = lastSleep && (Number(lastSleep.hours) < 6.2 || Number(lastSleep.energy) <= 2);
+
+      for (const entry of map.values()) {
+        const last = entry.sessions[entry.sessions.length - 1];
+        const prev = entry.sessions.length >= 2 ? entry.sessions[entry.sessions.length - 2] : null;
+        entry.isRecentPR = entry.best1RMDate && daysBetween(entry.best1RMDate, TODAY_KEY) <= 4;
+
+        if (!last || !last.sets.length) {
+          entry.nextPlan = 'Wykonaj 3 serie robocze z zapasem 2 powtórzeń.';
+          continue;
+        }
+
+        const topSet = last.sets.reduce((best, cur) => (Number(cur.weight) >= Number(best.weight) ? cur : best), last.sets[0]);
+        const minRepsInWorking = Math.min(...last.sets.map(s => Number(s.reps) || 0));
+        const maxRepsInWorking = Math.max(...last.sets.map(s => Number(s.reps) || 0));
+        const stepKg = Number(topSet.weight) >= 40 ? 2.5 : 1.25;
+
+        if (lowRecovery) {
+          entry.nextPlan = `Uwaga na regenerację (słabszy sen/energia): utrzymaj ${topSet.weight} kg × ${minRepsInWorking}–${maxRepsInWorking} powt. bez dokładania ciężaru.`;
+        } else if (minRepsInWorking >= 8) {
+          const nextW = Number((Number(topSet.weight) + stepKg).toFixed(2));
+          entry.nextPlan = `Progresja ciężaru: wejdź na ${nextW} kg i celuj w 3 × 6–8 powt.`;
+        } else if (prev && last.best1RM < prev.best1RM) {
+          entry.nextPlan = `Utrzymaj ${topSet.weight} kg i domknij równe ${maxRepsInWorking} powt. w każdej serii przed dołożeniem krążków.`;
+        } else {
+          const targetReps = Math.min(10, maxRepsInWorking + 1);
+          entry.nextPlan = `Podwójna progresja: zostaw ${topSet.weight} kg i postaraj się dobić do ${targetReps} powt. w seriach.`;
+        }
+      }
+
+      return Array.from(map.values());
+    }
+
+    function parseWorkoutText(rawText) {
+      const lines = String(rawText || '').split(/\n|;/).map(l => l.trim()).filter(Boolean);
+      const exercises = [];
+
+      for (const line of lines) {
+        const cleanLine = line.replace(/^(trening|siłownia|silownia)\s*[:\-]\s*/i, '').trim();
+        if (!cleanLine) continue;
+
+        let exName = '';
+        let setsPart = '';
+        if (cleanLine.includes(':')) {
+          const idx = cleanLine.indexOf(':');
+          exName = cleanLine.slice(0, idx).trim();
+          setsPart = cleanLine.slice(idx + 1).trim();
+        } else {
+          const m = cleanLine.match(/^([^\d]+?)\s+(\d+(?:[.,]\d+)?\s*(?:kg)?\s*[x×*]\s*\d+.*)$/i);
+          if (m) {
+            exName = m[1].trim();
+            setsPart = m[2].trim();
+          }
+        }
+
+        if (!exName || !setsPart) continue;
+        const sets = [];
+        const tripleMatch = setsPart.match(/^(\d+)\s*[x×*]\s*(\d+)\s*(?:na|@)?\s*(\d+(?:[.,]\d+)?)\s*(?:kg)?$/i);
+        if (tripleMatch) {
+          const count = Math.min(10, Math.max(1, Number(tripleMatch[1])));
+          const reps = Number(tripleMatch[2]);
+          const weight = parseFloat(tripleMatch[3].replace(',', '.'));
+          for (let i = 0; i < count; i++) sets.push({ weight, reps });
+        } else {
+          const regex = /(\d+(?:[.,]\d+)?)\s*(?:kg)?\s*[x×*]\s*(\d+)/gi;
+          let match;
+          while ((match = regex.exec(setsPart)) !== null) {
+            sets.push({
+              weight: parseFloat(match[1].replace(',', '.')),
+              reps: Number(match[2])
+            });
+          }
+        }
+
+        if (sets.length) {
+          exercises.push({ name: exName, sets });
+        }
+      }
+
+      return exercises;
+    }
+
+    function getWeeklyComparison() {
+      let curKcalSum = 0, curKcalDays = 0;
+      let prevKcalSum = 0, prevKcalDays = 0;
+      let curSleepSum = 0, curSleepDays = 0;
+      let prevSleepSum = 0, prevSleepDays = 0;
+      let curHabitDone = 0, curHabitTotal = 0;
+      let prevHabitDone = 0, prevHabitTotal = 0;
+
+      const habitsCount = state.habits.length || 1;
+
+      for (let i = 0; i < 7; i++) {
+        const kCur = addDays(TODAY_KEY, -i);
+        const kPrev = addDays(TODAY_KEY, -(i + 7));
+
+        const cCur = getCaloriesSummary(kCur).kcal;
+        if (cCur > 0) { curKcalSum += cCur; curKcalDays++; }
+        const cPrev = getCaloriesSummary(kPrev).kcal;
+        if (cPrev > 0) { prevKcalSum += cPrev; prevKcalDays++; }
+
+        const sCur = Number(state.sleepByDate[kCur]?.hours) || 0;
+        if (sCur > 0) { curSleepSum += sCur; curSleepDays++; }
+        const sPrev = Number(state.sleepByDate[kPrev]?.hours) || 0;
+        if (sPrev > 0) { prevSleepSum += sPrev; prevSleepDays++; }
+
+        const hCurMap = state.habitCompletions[kCur] || {};
+        curHabitDone += state.habits.filter(h => hCurMap[h.id]).length;
+        curHabitTotal += habitsCount;
+
+        const hPrevMap = state.habitCompletions[kPrev] || {};
+        prevHabitDone += state.habits.filter(h => hPrevMap[h.id]).length;
+        prevHabitTotal += habitsCount;
+      }
+
+      const curTonnage = (state.workouts || [])
+        .filter(w => daysBetween(w.date, TODAY_KEY) >= 0 && daysBetween(w.date, TODAY_KEY) < 7)
+        .reduce((sum, w) => sum + (w.exercises || []).reduce((s2, ex) => s2 + (ex.sets || []).reduce((s3, st) => s3 + (Number(st.weight) || 0) * (Number(st.reps) || 0), 0), 0), 0);
+
+      const prevTonnage = (state.workouts || [])
+        .filter(w => daysBetween(w.date, TODAY_KEY) >= 7 && daysBetween(w.date, TODAY_KEY) < 14)
+        .reduce((sum, w) => sum + (w.exercises || []).reduce((s2, ex) => s2 + (ex.sets || []).reduce((s3, st) => s3 + (Number(st.weight) || 0) * (Number(st.reps) || 0), 0), 0), 0);
+
+      return {
+        avgKcalCur: curKcalDays ? Math.round(curKcalSum / curKcalDays) : 0,
+        avgKcalPrev: prevKcalDays ? Math.round(prevKcalSum / prevKcalDays) : 0,
+        avgSleepCur: curSleepDays ? Number((curSleepSum / curSleepDays).toFixed(1)) : 0,
+        avgSleepPrev: prevSleepDays ? Number((prevSleepSum / prevSleepDays).toFixed(1)) : 0,
+        habitPctCur: Math.round((curHabitDone / Math.max(1, curHabitTotal)) * 100),
+        habitPctPrev: Math.round((prevHabitDone / Math.max(1, prevHabitTotal)) * 100),
+        tonnageCur: Math.round(curTonnage),
+        tonnagePrev: Math.round(prevTonnage)
+      };
+    }
+
+    function getUpcomingRadarItems() {
+      const items = [];
+      for (const rule of (state.recurringRules || [])) {
+        const st = getRuleStatusForDate(rule, TODAY_KEY);
+        items.push({
+          title: rule.title,
+          icon: rule.icon || '🔁',
+          daysUntil: st.daysUntil,
+          badge: st.daysUntil === 0 ? 'Dzisiaj!' : (st.daysUntil === 1 ? 'Jutro' : `Za ${st.daysUntil} dni`)
+        });
+      }
+      for (const ev of (state.events || [])) {
+        let nextDate = ev.date;
+        if (ev.recurringYearly) {
+          const curYear = parseDateKey(TODAY_KEY).getFullYear();
+          const candidate = `${curYear}-${ev.date.slice(5)}`;
+          nextDate = candidate >= TODAY_KEY ? candidate : `${curYear + 1}-${ev.date.slice(5)}`;
+        }
+        const diff = daysBetween(TODAY_KEY, nextDate);
+        if (diff >= 0 && diff <= 45) {
+          items.push({
+            title: ev.title,
+            icon: '🎂',
+            daysUntil: diff,
+            badge: diff === 0 ? 'Dzisiaj!' : (diff === 1 ? 'Jutro' : `Za ${diff} dni`)
+          });
+        }
+      }
+      return items.sort((a, b) => a.daysUntil - b.daysUntil).slice(0, 4);
     }
 
     // =========================================================================
-    // 3. ASYSTENT AI (GEMINI API POZA ROZMOWĄ + INTELIGENTNY PARSER LOKALNY)
+    // 4. ASYSTENT AI (GEMINI API + PARSER LOKALNY Z MAKRO I TRENINGAMI)
     // =========================================================================
     function applyParsedActions(actions) {
       const appliedLabels = [];
@@ -473,13 +1007,40 @@
           const name = act.name || 'Posiłek';
           const kcal = Number(act.kcal) || 350;
           const protein = Number(act.protein) || 20;
-          addMealEntry(targetDate, name, kcal, protein, act.mealType || 'Posiłek');
-          appliedLabels.push(`Posiłek: ${name} (${kcal} kcal, ${protein}g B)`); } else if (act.type === 'sleep') { const hours = Number(act.hours) \vert{}\vert{} 7; const quality = act.quality \vert{}\vert{} 'Dobry'; state.sleepByDate[targetDate] = { hours: Number(hours.toFixed(1)), quality, note: act.note \vert{}\vert{} 'Dodane przez Asystenta AI' }; saveState(); appliedLabels.push(`Sen: ${hours}h (${quality}) na${formatShortDate(targetDate)}`);
+          const carbs = Number(act.carbs) || 35;
+          const fat = Number(act.fat) || 10;
+          addMealEntry(targetDate, name, kcal, protein, carbs, fat, act.mealType || 'Posiłek');
+          appliedLabels.push(`Posiłek: ${name} (${kcal} kcal • B:${protein}g W:${carbs}g T:${fat}g)`);
+        } else if (act.type === 'sleep') {
+          const hours = Number(act.hours) || 7;
+          const quality = act.quality || 'Dobry';
+          const energy = Math.min(5, Math.max(1, Number(act.energy) || 4));
+          state.sleepByDate[targetDate] = {
+            hours: Number(hours.toFixed(1)),
+            quality,
+            energy,
+            note: act.note || 'Dodane przez Asystenta AI'
+          };
+          saveState();
+          appliedLabels.push(`Sen: ${hours}h (${quality}, energia ${energy}/5)`);
         } else if (act.type === 'weight') {
           const w = parseWeightInput(act.weight);
           if (w > 0) {
             addWeightEntry(targetDate, w);
             appliedLabels.push(`Waga: ${formatWeight(w)} (${formatShortDate(targetDate)})`);
+          }
+        } else if (act.type === 'workout') {
+          const exercises = Array.isArray(act.exercises) ? act.exercises : [];
+          if (exercises.length) {
+            state.workouts.push({
+              id: 'wo_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+              date: targetDate,
+              title: act.title || 'Trening siłowy',
+              notes: act.notes || 'Zapisane przez Asystenta AI',
+              exercises
+            });
+            saveState();
+            appliedLabels.push(`Trening (${formatShortDate(targetDate)}): ${exercises.map(e => e.name).join(', ')}`);
           }
         } else if (act.type === 'habit_done') {
           const query = (act.habitName || '').toLowerCase();
@@ -501,7 +1062,8 @@
             state.habits.push({
               id: 'h_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
               title,
-              icon: act.icon || '✅'
+              icon: act.icon || '✅',
+              timeOfDay: act.timeOfDay || 'all'
             });
             saveState();
             appliedLabels.push(`Nowy codzienny nawyk: ${title}`);
@@ -516,7 +1078,19 @@
               done: false
             });
             saveState();
-            appliedLabels.push(`Zadanie na ${formatShortDate(targetDate)}: ${title}`); } } else if (act.type === 'event') { const title = (act.title \vert{}\vert{} 'Wydarzenie').trim(); state.events.push({ id: 'evt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5), title, date: targetDate, recurringYearly: Boolean(act.recurringYearly), category: act.category \vert{}\vert{} 'Wydarzenie' }); saveState(); appliedLabels.push(`Kalendarz (${formatShortDate(targetDate)}): ${title}${act.recurringYearly ? ' [co roku]' : ''}`);
+            appliedLabels.push(`Zadanie na ${formatShortDate(targetDate)}: ${title}`);
+          }
+        } else if (act.type === 'event') {
+          const title = (act.title || 'Wydarzenie').trim();
+          state.events.push({
+            id: 'evt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+            title,
+            date: targetDate,
+            recurringYearly: Boolean(act.recurringYearly),
+            category: act.category || 'Wydarzenie'
+          });
+          saveState();
+          appliedLabels.push(`Kalendarz (${formatShortDate(targetDate)}): ${title}${act.recurringYearly ? ' [co roku]' : ''}`);
         }
       }
 
@@ -533,30 +1107,20 @@
       else if (/\bjutro\b/.test(lower)) targetDate = addDays(TODAY_KEY, 1);
       else if (/\bwczoraj\b/.test(lower)) targetDate = addDays(TODAY_KEY, -1);
 
-      const monthsMap = {
-        stycznia: '01', styczen: '01',
-        lutego: '02', luty: '02',
-        marca: '03', marzec: '03',
-        kwietnia: '04', kwiecien: '04',
-        maja: '05', maj: '05',
-        czerwca: '06', czerwiec: '06',
-        lipca: '07', lipiec: '07',
-        sierpnia: '08', sierpien: '08',
-        wrzesnia: '09', wrzesien: '09',
-        pazdziernika: '10', 'października': '10', pazdziernik: '10', 'październik': '10',
-        listopada: '11', listopad: '11',
-        grudnia: '12', grudzien: '12'
-      };
-      const monthMatch = lower.match(/\b(\d{1,2})\s+(stycznia|lutego|marca|kwietnia|maja|czerwca|lipca|sierpnia|wrzesnia|września|pazdziernika|października|listopada|grudnia)\b/);
-      if (monthMatch) {
-        const day = pad2(Number(monthMatch[1]));
-        const mKey = monthMatch[2].replace('ś', 's').replace('ź', 'z');
-        const mon = monthsMap[mKey] || '01';
-        const yr = parseDateKey(TODAY_KEY).getFullYear();
-        targetDate = `${yr}-${mon}-${day}`;
+      const parsedExercises = parseWorkoutText(text);
+      if (parsedExercises.length) {
+        actions.push({
+          type: 'workout',
+          title: 'Trening siłowy',
+          date: targetDate,
+          exercises: parsedExercises
+        });
+        return {
+          reply: 'Zapisałem trening i przeliczyłem Twoje rekordy oraz podpowiedź na kolejną sesję w zakładce **Siłownia & Progres**!',
+          actions
+        };
       }
 
-      // Woda
       const literMatch = lower.match(/(\d+(?:[.,]\d+)?)\s*(?:l|litr|litra|litrów)/);
       const mlMatch = lower.match(/(\d{2,4})\s*ml/);
       if (literMatch) {
@@ -570,52 +1134,53 @@
         actions.push({ type: 'water', ml: 250, date: targetDate });
       }
 
-      // Waga
       const weightMatch = lower.match(/(?:waż[ęe]|waze|waga)\s*(?:dzi[śs]|dzis)?\s*[:=]?\s*(\d{2,3}(?:[.,]\d{1,2})?)\s*(?:kg)?/);
       if (weightMatch) {
         actions.push({ type: 'weight', weight: parseWeightInput(weightMatch[1]), date: targetDate });
       }
 
-      // Sen
       const sleepHoursMatch = lower.match(/(\d+(?:[.,]\d+)?)\s*(?:h|godz|godzin|godziny)\s*(?:snu)?/);
       const sleepWordMatch = lower.match(/(?:spałem|spalem|sen)\s+(\d+(?:[.,]\d+)?)/);
       if (sleepHoursMatch || sleepWordMatch) {
         const rawH = sleepHoursMatch ? sleepHoursMatch[1] : sleepWordMatch[1];
         const hours = parseFloat(rawH.replace(',', '.'));
         let quality = 'Dobry';
-        if (/średnio|srednio|tak sobie|słabo|slabo/.test(lower)) quality = 'Średni';
-        else if (/świetnie|swietnie|super|extra|mocno/.test(lower)) quality = 'Świetny';
-        actions.push({ type: 'sleep', hours, quality, date: targetDate });
+        let energy = 4;
+        if (/średnio|srednio|tak sobie|słabo|slabo/.test(lower)) { quality = 'Średni'; energy = 2; }
+        else if (/świetnie|swietnie|super|extra|mocno/.test(lower)) { quality = 'Świetny'; energy = 5; }
+        const enMatch = lower.match(/energi[aai]\s*(\d)\s*(?:\/\s*5)?/);
+        if (enMatch) energy = Math.min(5, Math.max(1, Number(enMatch[1])));
+        actions.push({ type: 'sleep', hours, quality, energy, date: targetDate });
       }
 
-      // Posiłek / kalorie
       if (/zjadłem|zjadlem|zjadłam|zjadlam|na śniadanie|na sniadanie|na obiad|na kolację|na kolacje|kcal|kalorii/.test(lower)) {
         const kcalMatch = lower.match(/(\d{2,4})\s*kcal/);
-        const protMatch = lower.match(/(\d{1,3})\s*g?\s*(?:białka|bialka|b)/);
+        const protMatch = lower.match(/(\d{1,3})\s*g?\s*(?:białka|bialka|b\b)/);
+        const carbMatch = lower.match(/(\d{1,3})\s*g?\s*(?:węgli|wegli|węglowodanów|weglowodanow|w\b)/);
+        const fatMatch = lower.match(/(\d{1,3})\s*g?\s*(?:tłuszczu|tluszczu|t\b)/);
         let mealName = text
           .replace(/^(wypiłem|wypilem|i)\s+/i, '')
           .replace(/(zjadłem|zjadlem|zjadłam|zjadlam)\s+/i, '')
-          .replace(/\(?\s*\d{2,4}\s*kcal[^)]*\)?/gi, '')
+          .replace(/\d{2,4}\s*kcal/gi, '')
+          .replace(/\d{1,3}\s*g?\s*(?:białka|bialka|węgli|wegli|węglowodanów|weglowodanow|tłuszczu|tluszczu)/gi, '')
           .trim();
-        if (mealName.length > 60) mealName = mealName.slice(0, 60) + '…';
-        const estimatedKcal = kcalMatch ? Number(kcalMatch[1]) : 420;
-        const estimatedProtein = protMatch ? Number(protMatch[1]) : 22;
+        if (mealName.length > 55) mealName = mealName.slice(0, 55) + '…';
         actions.push({
           type: 'meal',
           name: mealName || 'Posiłek',
-          kcal: estimatedKcal,
-          protein: estimatedProtein,
+          kcal: kcalMatch ? Number(kcalMatch[1]) : 450,
+          protein: protMatch ? Number(protMatch[1]) : 25,
+          carbs: carbMatch ? Number(carbMatch[1]) : 45,
+          fat: fatMatch ? Number(fatMatch[1]) : 12,
           date: targetDate
         });
       }
 
-      // Dodanie nowego codziennego nawyku
       const addHabitMatch = text.match(/(?:dodaj\s+(?:codzienny\s+)?nawyk|nowy\s+nawyk)\s+(.+)/i);
       if (addHabitMatch) {
         actions.push({ type: 'add_habit', title: addHabitMatch[1].trim() });
       }
 
-      // Odhaczenie nawyku
       if (/kreatyn[ęe]|kreatyna/.test(lower) && /wzi[aą][łl][eę]m|zaliczon|zrobion|odznacz/.test(lower)) {
         actions.push({ type: 'habit_done', habitName: 'Kreatyna', date: targetDate });
       }
@@ -627,15 +1192,12 @@
         actions.push({ type: 'habit_done', habitName: isEvening ? 'Mycie zębów wieczorem' : 'Mycie zębów rano', date: targetDate });
       }
 
-      // Urodziny / wydarzenie w kalendarzu
       if (/urodzin/.test(lower)) {
         const cleanTitle = text.replace(/^(przypomnij\s+mi\s+|dodaj\s+|zapisz\s+)/i, '').trim();
         actions.push({ type: 'event', title: cleanTitle, date: targetDate, recurringYearly: true, category: 'Urodziny' });
       } else {
         const taskMatch = text.match(/(?:dodaj\s+zadanie|zadanie|przypomnij(?:\s+mi)?(?:\s+o)?)\s+(.+)/i);
-        if (taskMatch) {
-          actions.push({ type: 'task', title: taskMatch[1].trim(), date: targetDate });
-        }
+        if (taskMatch) actions.push({ type: 'task', title: taskMatch[1].trim(), date: targetDate });
       }
 
       if (!actions.length) {
@@ -664,33 +1226,19 @@
 
       if (apiKey) {
         try {
-          const systemInstruction = `Jesteś asystentem aplikacji YouVsYou dla użytkownika "${state.profile.name}".
-Dzisiejsza data: ${TODAY_KEY}. Profil: wiek ${state.profile.age}, wzrost ${state.profile.heightCm} cm, waga obecna ${parseWeightInput(state.profile.currentWeight).toFixed(2)} kg, cel ${parseWeightInput(state.profile.goalWeight).toFixed(2)} kg, cel kalorii ${state.profile.calorieGoal} kcal, cel wody ${state.profile.waterGoalMl} ml.
-Codzienne nawyki użytkownika: ${state.habits.map(h => h.title).join(', ')}.
-
-Przeanalizuj wiadomość użytkownika i zwróć WYŁĄCZNIE poprawny obiekt JSON (bez markdown \`\`\`):
+          const systemInstruction = `Jesteś asystentem aplikacji YouVsYou dla "${state.profile.name}". Dzisiaj: ${TODAY_KEY}.
+Zwróć WYŁĄCZNIE poprawny JSON:
 {
-  "reply": "krótka, naturalna odpowiedź po polsku po imieniu",
+  "reply": "krótka odpowiedź po polsku",
   "actions": [
-    // możliwe typy:
-    // {"type":"water","ml":500,"date":"YYYY-MM-DD"}
-    // {"type":"meal","name":"nazwa","kcal":450,"protein":25,"mealType":"Posiłek","date":"YYYY-MM-DD"}
-    // {"type":"sleep","hours":7.5,"quality":"Dobry","date":"YYYY-MM-DD"}
-    // {"type":"weight","weight":81.50,"date":"YYYY-MM-DD"}
-    // {"type":"habit_done","habitName":"Kreatyna","date":"YYYY-MM-DD"}
-    // {"type":"add_habit","title":"nazwa nawyku"}
-    // {"type":"task","title":"treść zadania","date":"YYYY-MM-DD"}
-    // {"type":"event","title":"nazwa wydarzenia","date":"YYYY-MM-DD","recurringYearly":true,"category":"Wydarzenie"}
+    {"type":"water","ml":500,"date":"YYYY-MM-DD"}
   ]
 }`;
-
           const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              contents: [
-                { role: 'user', parts: [{ text: systemInstruction + '\n\nWiadomość użytkownika: ' + prompt }] }
-              ],
+              contents: [{ role: 'user', parts: [{ text: systemInstruction + '\n\nWiadomość: ' + prompt }] }],
               generationConfig: { temperature: 0.2 }
             })
           });
@@ -700,10 +1248,8 @@ Przeanalizuj wiadomość użytkownika i zwróć WYŁĄCZNIE poprawny obiekt JSON
           if (jsonMatch) {
             const parsed = JSON.parse(jsonMatch[0]);
             applied = applyParsedActions(parsed.actions || []);
-            replyText = parsed.reply || 'Zaktualizowałem Twoje dane w YouVsYou!';
-          } else {
-            throw new Error('Brak JSON');
-          }
+            replyText = parsed.reply || 'Zaktualizowałem Twoje dane!';
+          } else throw new Error('Brak JSON');
         } catch (_) {
           const fallback = parseNaturalLanguageLocal(prompt);
           applied = applyParsedActions(fallback.actions);
@@ -715,18 +1261,14 @@ Przeanalizuj wiadomość użytkownika i zwróć WYŁĄCZNIE poprawny obiekt JSON
         replyText = localRes.reply;
       }
 
-      state.aiMessages.push({
-        role: 'assistant',
-        text: replyText,
-        applied
-      });
+      state.aiMessages.push({ role: 'assistant', text: replyText, applied });
       ui.aiLoading = false;
       saveState();
       render();
     }
 
     // =========================================================================
-    // 4. STAN UI I NAWIGACJA
+    // 5. STAN UI I KREATOR POWITALNY
     // =========================================================================
     let state = loadState();
 
@@ -734,7 +1276,6 @@ Przeanalizuj wiadomość użytkownika i zwróć WYŁĄCZNIE poprawny obiekt JSON
       activeTab: 'today',
       selectedDate: TODAY_KEY,
       calMonthOffset: 0,
-      calendarView: 'month',
       aiOpen: false,
       aiDraft: '',
       aiLoading: false,
@@ -742,6 +1283,7 @@ Przeanalizuj wiadomość użytkownika i zwróć WYŁĄCZNIE poprawny obiekt JSON
       showHabitEditor: false,
       showRuleModal: false,
       showAvatarModal: false,
+      showEveningModal: false,
       tempProfile: { ...state.profile }
     };
 
@@ -757,6 +1299,7 @@ Przeanalizuj wiadomość użytkownika i zwróć WYŁĄCZNIE poprawny obiekt JSON
       const p = ui.tempProfile;
       const startW = parseWeightInput(p.startWeight) || 80.00;
       const goalW = parseWeightInput(p.goalWeight) || startW;
+      const calc = calculateNutritionTargets({ ...p, currentWeight: startW });
       state.profile = {
         ...state.profile,
         name: (p.name || 'Zawodnik').trim() || 'Zawodnik',
@@ -767,11 +1310,11 @@ Przeanalizuj wiadomość użytkownika i zwróć WYŁĄCZNIE poprawny obiekt JSON
         currentWeight: startW,
         goalWeight: goalW,
         goalType: p.goalType || 'recomp',
-        calorieGoal: Math.max(1000, Number(p.calorieGoal) || 2400),
-        waterGoalMl: Math.max(500, Number(p.waterGoalMl) || 3000),
-        userAvatar: p.userAvatar || state.profile.userAvatar,
-        aiAvatar: p.aiAvatar || state.profile.aiAvatar,
-        geminiApiKey: p.geminiApiKey ?? state.profile.geminiApiKey
+        calorieGoal: Math.max(1000, Number(p.calorieGoal) || calc.calorieGoal),
+        proteinGoal: calc.proteinGoal,
+        carbsGoal: calc.carbsGoal,
+        fatGoal: calc.fatGoal,
+        waterGoalMl: Math.max(500, Number(p.waterGoalMl) || calc.waterGoalMl)
       };
       addWeightEntry(TODAY_KEY, startW);
       state.onboardingCompleted = true;
@@ -779,15 +1322,12 @@ Przeanalizuj wiadomość użytkownika i zwróć WYŁĄCZNIE poprawny obiekt JSON
       render();
     }
 
-    // =========================================================================
-    // 5. KREATOR POWITALNY (1 PYTANIE = 1 SLAJD)
-    // =========================================================================
     function renderOnboarding() {
       const p = ui.tempProfile;
       const totalSlides = 8;
       const step = Math.max(0, Math.min(totalSlides - 1, ui.onboardingStep));
       const pct = Math.round(((step + 1) / totalSlides) * 100);
-      const suggested = suggestTargets(p);
+      const suggested = calculateNutritionTargets({ ...p, currentWeight: p.startWeight });
 
       const nextStep = () => {
         if (step < totalSlides - 1) {
@@ -797,239 +1337,1511 @@ Przeanalizuj wiadomość użytkownika i zwróć WYŁĄCZNIE poprawny obiekt JSON
           }
           ui.onboardingStep = step + 1;
           render();
-          setTimeout(() => {
-            const inp = document.querySelector('#slide-focus-input');
-            if (inp) inp.focus();
-          }, 40);
+          setTimeout(() => document.querySelector('#slide-focus-input')?.focus(), 40);
         } else {
           finishOnboarding();
         }
       };
 
-      const prevStep = () => {
-        if (step > 0) {
-          ui.onboardingStep = step - 1;
-          render();
-        }
-      };
-
       let slideBody = '';
-
       if (step === 0) {
         slideBody = `
           <div class="slide-step space-y-6">
-            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-              YouVsYou • Krok 1 z ${totalSlides}
-            </span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold accent-badge">YouVsYou • Krok 1 z ${totalSlides}</span>
             <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Jak mamy się do Ciebie zwracać?</h1>
-            <p class="text-slate-400 text-base">Twój osobisty planer nawyków, kalendarza i formy. Podaj swoje imię lub pseudonim.</p>
-            <input id="slide-focus-input" type="text" value="${escapeAttr(p.name)}" placeholder="Np. Kuba, Alex..."
-              class="w-full px-5 py-4 rounded-2xl bg-slate-900/90 border border-white/15 text-xl font-semibold text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 transition" />
-          </div>
-        `;
+            <p class="text-slate-400 text-base">Twój osobisty system nawyków, kalendarza i progresu siłowego.</p>
+            <input id="slide-focus-input" type="text" value="${escapeAttr(p.name)}" placeholder="Np. Kuba, Alex..." class="w-full px-5 py-4 rounded-2xl bg-slate-900/90 border border-white/15 text-xl font-semibold text-white focus:outline-none" />
+          </div>`;
       } else if (step === 1) {
         slideBody = `
           <div class="slide-step space-y-6">
-            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
-              Krok 2 z ${totalSlides}
-            </span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold accent-badge">Krok 2 z ${totalSlides}</span>
             <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Wybierz płeć</h1>
-            <p class="text-slate-400 text-base">Pomaga lepiej oszacować wyjściowe zapotrzebowanie kaloryczne i nawodnienie.</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button type="button" data-pick-gender="male" class="p-5 rounded-2xl border text-left transition ${p.gender === 'male' ? 'bg-emerald-500/15 border-emerald-400 text-white' : 'bg-slate-900/70 border-white/10 text-slate-300 hover:border-white/25'}">
-                <div class="text-2xl mb-2">⚡</div>
-                <div class="font-bold text-lg">Mężczyzna</div>
-                <div class="text-xs text-slate-400 mt-1">Kliknij, aby wybrać i przejść dalej</div>
+              <button type="button" data-pick-gender="male" class="p-5 rounded-2xl border text-left transition ${p.gender === 'male' ? 'accent-badge' : 'bg-slate-900/70 border-white/10 text-slate-300'}">
+                <div class="text-2xl mb-2">⚡</div><div class="font-bold text-lg">Mężczyzna</div>
               </button>
-              <button type="button" data-pick-gender="female" class="p-5 rounded-2xl border text-left transition ${p.gender === 'female' ? 'bg-emerald-500/15 border-emerald-400 text-white' : 'bg-slate-900/70 border-white/10 text-slate-300 hover:border-white/25'}">
-                <div class="text-2xl mb-2">✨</div>
-                <div class="font-bold text-lg">Kobieta</div>
-                <div class="text-xs text-slate-400 mt-1">Kliknij, aby wybrać i przejść dalej</div>
+              <button type="button" data-pick-gender="female" class="p-5 rounded-2xl border text-left transition ${p.gender === 'female' ? 'accent-badge' : 'bg-slate-900/70 border-white/10 text-slate-300'}">
+                <div class="text-2xl mb-2">✨</div><div class="font-bold text-lg">Kobieta</div>
               </button>
             </div>
-          </div>
-        `;
+          </div>`;
       } else if (step === 2) {
         slideBody = `
           <div class="slide-step space-y-6">
-            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-              Krok 3 z ${totalSlides}
-            </span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold accent-badge">Krok 3 z ${totalSlides}</span>
             <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Ile masz lat?</h1>
-            <p class="text-slate-400 text-base">Wiek wpływa na podstawową przemianę materii i regenerację.</p>
             <div class="flex items-center gap-4">
-              <input id="slide-focus-input" type="number" min="10" max="110" value="${p.age}"
-                class="w-40 px-5 py-4 rounded-2xl bg-slate-900/90 border border-white/15 text-2xl font-bold text-white focus:outline-none focus:border-emerald-400" />
+              <input id="slide-focus-input" type="number" min="10" max="110" value="${p.age}" class="w-40 px-5 py-4 rounded-2xl bg-slate-900/90 border border-white/15 text-2xl font-bold text-white" />
               <span class="text-lg font-semibold text-slate-400">lat</span>
             </div>
-          </div>
-        `;
+          </div>`;
       } else if (step === 3) {
         slideBody = `
           <div class="slide-step space-y-6">
-            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
-              Krok 4 z ${totalSlides}
-            </span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold accent-badge">Krok 4 z ${totalSlides}</span>
             <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Jaki masz wzrost?</h1>
-            <p class="text-slate-400 text-base">Potrzebne m.in. do wyliczenia wskaźnika BMI i celów sylwetkowych.</p>
             <div class="flex items-center gap-4">
-              <input id="slide-focus-input" type="number" min="120" max="230" value="${p.heightCm}"
-                class="w-44 px-5 py-4 rounded-2xl bg-slate-900/90 border border-white/15 text-2xl font-bold text-white focus:outline-none focus:border-emerald-400" />
+              <input id="slide-focus-input" type="number" min="120" max="230" value="${p.heightCm}" class="w-44 px-5 py-4 rounded-2xl bg-slate-900/90 border border-white/15 text-2xl font-bold text-white" />
               <span class="text-lg font-semibold text-slate-400">cm</span>
             </div>
-          </div>
-        `;
+          </div>`;
       } else if (step === 4) {
         slideBody = `
           <div class="slide-step space-y-6">
-            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-              Krok 5 z ${totalSlides}
-            </span>
-            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Jaka jest Twoja obecna waga?</h1>
-            <p class="text-slate-400 text-base">Możesz wpisać z kropką lub przecinkiem — zachowamy pełne dwa miejsca po przecinku (np. <span class="text-slate-200 font-semibold">100.00</span>).</p>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold accent-badge">Krok 5 z ${totalSlides}</span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Obecna waga</h1>
+            <p class="text-slate-400 text-sm">Zachowujemy dwa miejsca po przecinku (np. 100.00 kg).</p>
             <div class="flex items-center gap-4">
-              <input id="slide-focus-input" type="text" inputmode="decimal" value="${parseWeightInput(p.startWeight).toFixed(2)}"
-                class="w-52 px-5 py-4 rounded-2xl bg-slate-900/90 border border-white/15 text-2xl font-bold text-white focus:outline-none focus:border-emerald-400" />
+              <input id="slide-focus-input" type="text" inputmode="decimal" value="${parseWeightInput(p.startWeight).toFixed(2)}" class="w-52 px-5 py-4 rounded-2xl bg-slate-900/90 border border-white/15 text-2xl font-bold text-white" />
               <span class="text-lg font-semibold text-slate-400">kg</span>
             </div>
-          </div>
-        `;
+          </div>`;
       } else if (step === 5) {
         slideBody = `
           <div class="slide-step space-y-6">
-            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
-              Krok 6 z ${totalSlides}
-            </span>
-            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Jaka jest Twoja waga docelowa?</h1>
-            <p class="text-slate-400 text-base">Ustaw punkt, do którego dążysz w zakładce <span class="text-slate-200 font-semibold">Waga & Cel</span>.</p>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold accent-badge">Krok 6 z ${totalSlides}</span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Waga docelowa</h1>
             <div class="flex items-center gap-4">
-              <input id="slide-focus-input" type="text" inputmode="decimal" value="${parseWeightInput(p.goalWeight).toFixed(2)}"
-                class="w-52 px-5 py-4 rounded-2xl bg-slate-900/90 border border-white/15 text-2xl font-bold text-white focus:outline-none focus:border-emerald-400" />
+              <input id="slide-focus-input" type="text" inputmode="decimal" value="${parseWeightInput(p.goalWeight).toFixed(2)}" class="w-52 px-5 py-4 rounded-2xl bg-slate-900/90 border border-white/15 text-2xl font-bold text-white" />
               <span class="text-lg font-semibold text-slate-400">kg</span>
             </div>
-          </div>
-        `;
+          </div>`;
       } else if (step === 6) {
         const goals = [
-          { id: 'cut', icon: '🔥', title: 'Redukcja / Spadek wagi', desc: 'Lekki deficyt kaloryczny i budowanie nawyków' },
-          { id: 'recomp', icon: '⚔️', title: 'Rekompozycja / Forma', desc: 'Siła, estetyka i codzienna dyscyplina' },
-          { id: 'bulk', icon: '💪', title: 'Budowa masy mięśniowej', desc: 'Nadwyżka kaloryczna i progres treningowy' }
+          { id: 'cut', icon: '🔥', title: 'Redukcja / Spadek wagi', desc: 'Lekki deficyt i wysoka podaż białka' },
+          { id: 'recomp', icon: '⚔️', title: 'Rekompozycja / Forma', desc: 'Siła, sylwetka i regularność' },
+          { id: 'bulk', icon: '💪', title: 'Budowa masy mięśniowej', desc: 'Nadwyżka kaloryczna i progres ciężaru' }
         ];
         slideBody = `
           <div class="slide-step space-y-6">
-            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-              Krok 7 z ${totalSlides}
-            </span>
-            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Jaki jest Twój główny cel?</h1>
-            <p class="text-slate-400 text-base">Wybierz kierunek — przejdziemy od razu do wyliczenia dziennych limitów.</p>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold accent-badge">Krok 7 z ${totalSlides}</span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Główny cel</h1>
             <div class="space-y-3">
               ${goals.map(g => `
-                <button type="button" data-pick-goal="${g.id}" class="w-full p-4 rounded-2xl border text-left flex items-center gap-4 transition ${p.goalType === g.id ? 'bg-emerald-500/15 border-emerald-400 text-white' : 'bg-slate-900/70 border-white/10 text-slate-300 hover:border-white/25'}">
+                <button type="button" data-pick-goal="${g.id}" class="w-full p-4 rounded-2xl border text-left flex items-center gap-4 transition ${p.goalType === g.id ? 'accent-badge' : 'bg-slate-900/70 border-white/10 text-slate-300'}">
                   <span class="text-2xl">${g.icon}</span>
-                  <div>
-                    <div class="font-bold text-base">${g.title}</div>
-                    <div class="text-xs text-slate-400">${g.desc}</div>
-                  </div>
+                  <div><div class="font-bold text-base">${g.title}</div><div class="text-xs text-slate-400">${g.desc}</div></div>
                 </button>
               `).join('')}
             </div>
-          </div>
-        `;
+          </div>`;
       } else {
         slideBody = `
           <div class="slide-step space-y-6">
-            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-              Krok 8 z ${totalSlides} • Gotowe
-            </span>
-            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Twoje dzienne cele w YouVsYou</h1>
-            <p class="text-slate-400 text-base">Możesz zostawić proponowane wartości albo wpisać własne przed wejściem do aplikacji.</p>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold accent-badge">Krok 8 z ${totalSlides} • Gotowe</span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Twoje dzienne cele i makro</h1>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="p-4 rounded-2xl bg-slate-900/80 border border-white/10">
-                <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-2">Limit kalorii (kcal)</label>
-                <input id="input-onboard-kcal" type="number" step="50" value="${p.calorieGoal}"
-                  class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-xl font-bold text-emerald-300 focus:outline-none focus:border-emerald-400" />
+                <label class="block text-xs text-slate-400 font-semibold mb-2">Limit kalorii (kcal)</label>
+                <input id="input-onboard-kcal" type="number" step="25" value="${p.calorieGoal}" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-xl font-bold accent-text" />
               </div>
               <div class="p-4 rounded-2xl bg-slate-900/80 border border-white/10">
-                <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-2">Cel wody (ml)</label>
-                <input id="input-onboard-water" type="number" step="250" value="${p.waterGoalMl}"
-                  class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-xl font-bold text-cyan-300 focus:outline-none focus:border-cyan-400" />
+                <label class="block text-xs text-slate-400 font-semibold mb-2">Cel wody bazowy (ml)</label>
+                <input id="input-onboard-water" type="number" step="250" value="${p.waterGoalMl}" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-xl font-bold text-cyan-300" />
               </div>
             </div>
-            <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-300">
-              <span>Profil: <strong class="text-white">${escapeHtml(p.name)}</strong> (${p.age} lat, ${p.heightCm} cm)</span>
-              <span>Waga: <strong class="text-emerald-300">${formatWeight(p.startWeight)}</strong> → <strong class="text-indigo-300">${formatWeight(p.goalWeight)}</strong></span>
+            <div class="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 text-xs text-slate-300 flex flex-wrap justify-between gap-2">
+              <span>Proponowane makro: <strong class="text-white">B: ${suggested.proteinGoal}g • W: ${suggested.carbsGoal}g • T: ${suggested.fatGoal}g</strong></span>
+              <span>Dzień treningowy: <strong class="text-cyan-300">+500 ml wody</strong></span>
             </div>
-          </div>
-        `;
+          </div>`;
       }
 
-      const syncCurrentSlideInput = () => {
+      const syncInput = () => {
         const el = document.querySelector('#slide-focus-input');
-        if (!el) return;
-        if (step === 0) p.name = el.value;
-        else if (step === 2) p.age = Number(el.value) || 22;
-        else if (step === 3) p.heightCm = Number(el.value) || 180;
-        else if (step === 4) p.startWeight = parseWeightInput(el.value);
-        else if (step === 5) p.goalWeight = parseWeightInput(el.value);
-
+        if (el) {
+          if (step === 0) p.name = el.value;
+          else if (step === 2) p.age = Number(el.value) || 22;
+          else if (step === 3) p.heightCm = Number(el.value) || 180;
+          else if (step === 4) p.startWeight = parseWeightInput(el.value);
+          else if (step === 5) p.goalWeight = parseWeightInput(el.value);
+        }
         if (step === 7) {
           const kEl = document.querySelector('#input-onboard-kcal');
           const wEl = document.querySelector('#input-onboard-water');
-          if (kEl) p.calorieGoal = Number(kEl.value) || 2400;
+          if (kEl) p.calorieGoal = Number(kEl.value) || 2450;
           if (wEl) p.waterGoalMl = Number(wEl.value) || 3000;
         }
       };
 
-      const appEl = document.getElementById('app');
-      appEl.innerHTML = `
+      document.getElementById('app').innerHTML = `
         <div class="min-h-screen flex flex-col justify-between px-4 py-6 sm:px-8 max-w-2xl mx-auto">
           <div class="space-y-4">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-indigo-500 flex items-center justify-center font-extrabold text-slate-950 text-sm">Y</div>
+                <div class="w-9 h-9 rounded-xl accent-gradient flex items-center justify-center font-extrabold text-white text-sm">Y</div>
                 <span class="font-extrabold tracking-tight text-lg text-white">YouVsYou</span>
               </div>
-              <button type="button" id="btn-skip-onboarding" class="text-xs font-medium text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded-lg hover:bg-white/5 transition">
-                Pomiń i wejdź od razu →
-              </button>
+              <button type="button" id="btn-skip-onboarding" class="text-xs font-medium text-slate-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/5">Pomiń →</button>
             </div>
-            <div class="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-              <div class="h-full bg-gradient-to-r from-emerald-400 to-indigo-500 transition-all duration-300" style="width:${pct}%"></div>
-            </div>
+            <div class="w-full h-2 rounded-full bg-white/10 overflow-hidden"><div class="h-full accent-bar transition-all duration-300" style="width:${pct}%"></div></div>
           </div>
-
-          <div class="my-auto py-8">
-            <div class="glass-card rounded-3xl p-6 sm:p-10">
-              ${slideBody}
-            </div>
-          </div>
-
+          <div class="my-auto py-8"><div class="glass-card rounded-3xl p-6 sm:p-10">${slideBody}</div></div>
           <div class="flex items-center justify-between gap-4 pt-2">
-            <button type="button" id="btn-prev-slide" ${step === 0 ? 'disabled' : ''}
-              class="px-5 py-3 rounded-xl font-semibold text-sm border border-white/10 text-slate-300 hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none transition">
-              ← Wstecz
-            </button>
-            <button type="button" id="btn-next-slide"
-              class="px-7 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-500 to-emerald-400 text-slate-950 hover:brightness-110 shadow-lg shadow-emerald-500/20 transition">
-              ${step === totalSlides - 1 ? 'Uruchom YouVsYou ✓' : 'Dalej →'}
-            </button>
+            <button type="button" id="btn-prev-slide" ${step === 0 ? 'disabled' : ''} class="px-5 py-3 rounded-xl font-semibold text-sm border border-white/10 text-slate-300 disabled:opacity-30">← Wstecz</button>
+            <button type="button" id="btn-next-slide" class="px-7 py-3.5 rounded-xl font-bold text-sm accent-btn">${step === totalSlides - 1 ? 'Uruchom YouVsYou ✓' : 'Dalej →'}</button>
           </div>
         </div>
       `;
 
-      document.getElementById('btn-prev-slide')?.addEventListener('click', () => {
-        syncCurrentSlideInput();
-        prevStep();
+      document.getElementById('btn-prev-slide')?.addEventListener('click', () => { syncInput(); if (step > 0) { ui.onboardingStep = step - 1; render(); } });
+      document.getElementById('btn-next-slide')?.addEventListener('click', () => { syncInput(); nextStep(); });
+      document.getElementById('btn-skip-onboarding')?.addEventListener('click', () => { syncInput(); finishOnboarding(); });
+      document.querySelectorAll('[data-pick-gender]').forEach(btn => btn.addEventListener('click', () => { p.gender = btn.getAttribute('data-pick-gender'); ui.onboardingStep = step + 1; render(); }));
+      document.querySelectorAll('[data-pick-goal]').forEach(btn => btn.addEventListener('click', () => {
+        p.goalType = btn.getAttribute('data-pick-goal');
+        const s = calculateNutritionTargets({ ...p, currentWeight: p.startWeight });
+        p.calorieGoal = s.calorieGoal;
+        p.waterGoalMl = s.waterGoalMl;
+        ui.onboardingStep = step + 1;
+        render();
+      }));
+      document.getElementById('slide-focus-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); syncInput(); nextStep(); } });
+    }
+
+    // =========================================================================
+    // 6. WIDOKI ZAKŁADEK APLIKACJI
+    // =========================================================================
+    function renderTodayTab() {
+      const dKey = ui.selectedDate;
+      const isToday = dKey === TODAY_KEY;
+      const trainingToday = isTrainingDay(dKey);
+      const doneMap = state.habitCompletions[dKey] || {};
+      const tasks = state.tasksByDate[dKey] || [];
+      const waterTotal = getWaterTotal(dKey);
+      const waterGoal = getEffectiveWaterGoal(dKey);
+      const calSum = getCaloriesSummary(dKey);
+      const calGoal = Number(state.profile.calorieGoal) || 2450;
+      const sleepRec = state.sleepByDate[dKey];
+
+      const completedHabitsCount = state.habits.filter(h => Boolean(doneMap[h.id])).length;
+      const completedTasksCount = tasks.filter(t => Boolean(t.done)).length;
+      const totalItems = state.habits.length + tasks.length;
+      const completedItems = completedHabitsCount + completedTasksCount;
+      const progressPct = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+
+      const radar = getUpcomingRadarItems();
+      const weekly = getWeeklyComparison();
+
+      return `
+        <div class="view-enter space-y-6">
+          <div class="glass-card rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+            <div class="space-y-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs uppercase tracking-wider accent-text font-bold">
+                  ${isToday ? 'Dzisiaj w YouVsYou' : 'Wybrany dzień'}
+                </span>
+                ${trainingToday
+                  ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/35">🏋️ Dzień treningowy (+${state.profile.trainingWaterBonusMl || 500} ml wody)</span>`
+                  : `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-white/5 text-slate-400 border border-white/10">🔋 Dzień nietreningowy</span>`}
+              </div>
+              <h2 class="text-xl sm:text-2xl font-extrabold text-white capitalize">${formatPolishDate(dKey)}</h2>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" id="btn-open-evening-modal" class="px-3.5 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/35 text-indigo-200 text-xs font-bold transition">
+                🌙 Podgląd wieczorny
+              </button>
+              <button type="button" data-day-nav="-1" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-semibold">←</button>
+              <button type="button" data-day-nav="today" class="px-3.5 py-2 rounded-xl ${isToday ? 'accent-badge' : 'bg-white/5 border border-white/10 text-slate-200'} text-xs font-bold">Dzisiaj</button>
+              <button type="button" data-day-nav="1" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-semibold">→</button>
+            </div>
+          </div>
+
+          ${radar.length ? `
+            <div class="glass-card rounded-2xl p-4 flex flex-wrap items-center gap-3">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-amber-300 px-2">📡 Radar okazji:</span>
+              <div class="flex flex-wrap gap-2 flex-1">
+                ${radar.map(item => `
+                  <div class="px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center gap-2 text-xs">
+                    <span>${item.icon}</span>
+                    <span class="font-semibold text-white">${escapeHtml(item.title)}</span>
+                    <span class="px-2 py-0.5 rounded-md text-[11px] font-bold ${item.daysUntil === 0 ? 'accent-badge' : 'bg-white/10 text-slate-300'}">${item.badge}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="glass-card rounded-2xl p-4 md:col-span-2 flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Realizacja dnia</span>
+                <span class="text-sm font-extrabold accent-text">${completedItems}/${totalItems} (${progressPct}%)</span>
+              </div>
+              <div class="w-full h-3 rounded-full bg-white/10 overflow-hidden">
+                <div class="h-full accent-bar transition-all duration-300" style="width:${progressPct}%"></div>
+              </div>
+              <div class="text-xs text-slate-400 mt-2">
+                Nawyki: <strong class="text-slate-200">${completedHabitsCount}/${state.habits.length}</strong> • Zadania: <strong class="text-slate-200">${completedTasksCount}/${tasks.length}</strong>
+              </div>
+            </div>
+
+            <button type="button" data-jump-tab="water" class="glass-card glass-card-hover rounded-2xl p-4 text-left">
+              <div class="text-xs text-cyan-400 font-semibold">💧 Woda ${trainingToday ? '(+bonus)' : ''}</div>
+              <div class="text-xl font-extrabold text-white mt-1">${waterTotal} <span class="text-xs font-normal text-slate-400">/ ${waterGoal} ml</span></div>
+              <div class="text-xs text-slate-400 mt-1">${Math.min(100, Math.round((waterTotal / Math.max(1, waterGoal)) * 100))}% celu</div>
+            </button>
+
+            <button type="button" data-jump-tab="calories" class="glass-card glass-card-hover rounded-2xl p-4 text-left">
+              <div class="text-xs text-amber-400 font-semibold">🍽️ Kalorie & Makro</div>
+              <div class="text-xl font-extrabold text-white mt-1">${calSum.kcal} <span class="text-xs font-normal text-slate-400">/ ${calGoal}</span></div>
+              <div class="text-[11px] text-slate-400 mt-1">B:${calSum.protein}g • W:${calSum.carbs}g • T:${calSum.fat}g</div>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-7 space-y-6">
+              <div class="glass-card rounded-2xl p-5">
+                <div class="flex items-center justify-between gap-2 mb-4">
+                  <div>
+                    <h3 class="text-base font-bold text-white">Codzienne nawyki</h3>
+                    <p class="text-xs text-slate-400">Odświeżają się każdego dnia</p>
+                  </div>
+                  <button type="button" id="btn-toggle-habit-editor" class="px-3 py-1.5 rounded-xl text-xs font-semibold accent-badge">
+                    ${ui.showHabitEditor ? 'Zamknij edycję' : '+ Dodaj / Edytuj'}
+                  </button>
+                </div>
+
+                ${ui.showHabitEditor ? `
+                  <div class="mb-4 p-4 rounded-xl bg-slate-900/90 border border-white/10 space-y-3">
+                    <div class="text-xs font-semibold text-slate-300">Dodaj nowy codzienny nawyk</div>
+                    <div class="flex flex-wrap sm:flex-nowrap gap-2">
+                      <input id="new-habit-icon" type="text" value="✅" maxlength="3" class="w-14 px-2 py-2 rounded-xl bg-slate-950 border border-white/15 text-center text-base" />
+                      <input id="new-habit-title" type="text" placeholder="Np. Rozciąganie 10 min..." class="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 border border-white/15 text-sm text-white" />
+                      <select id="new-habit-tod" class="px-2.5 py-2 rounded-xl bg-slate-950 border border-white/15 text-xs text-slate-200">
+                        <option value="all">Cały dzień</option>
+                        <option value="morning">Rano</option>
+                        <option value="evening">Wieczorem</option>
+                      </select>
+                      <button type="button" id="btn-add-habit" class="px-4 py-2 rounded-xl accent-btn font-bold text-xs">Dodaj</button>
+                    </div>
+                  </div>
+                ` : ''}
+
+                <div class="space-y-2.5">
+                  ${state.habits.map(h => {
+                    const checked = Boolean(doneMap[h.id]);
+                    return `
+                      <div class="flex items-center justify-between gap-3 p-3 rounded-xl border transition ${checked ? 'accent-badge' : 'bg-white/[0.02] border-white/10 hover:border-white/25'}">
+                        <button type="button" data-toggle-habit="${h.id}" class="flex-1 flex items-center gap-3 text-left">
+                          <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold border ${checked ? 'accent-gradient border-transparent text-white' : 'border-white/25 text-transparent'}">✓</span>
+                          <span class="text-lg">${h.icon || '⚡'}</span>
+                          <span class="text-sm font-semibold ${checked ? 'line-through opacity-75' : 'text-slate-100'}">${escapeHtml(h.title)}</span>
+                        </button>
+                        ${ui.showHabitEditor ? `
+                          <div class="flex items-center gap-1.5">
+                            <button type="button" data-edit-habit="${h.id}" class="px-2.5 py-1 rounded-lg bg-white/5 text-xs text-slate-300">Edytuj</button>
+                            <button type="button" data-del-habit="${h.id}" class="px-2.5 py-1 rounded-lg bg-rose-500/15 text-xs text-rose-300">×</button>
+                          </div>
+                        ` : ''}
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+
+              <div class="glass-card rounded-2xl p-5">
+                <h3 class="text-base font-bold text-white mb-1">Zadania na ten dzień</h3>
+                <p class="text-xs text-slate-400 mb-4">Jednorazowe rzeczy do odhaczenia dzisiaj</p>
+                <div class="flex gap-2 mb-4">
+                  <input id="new-task-input" type="text" placeholder="Wpisz zadanie i naciśnij Enter..." class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900/90 border border-white/15 text-sm text-white" />
+                  <button type="button" id="btn-add-task" class="px-4 py-2.5 rounded-xl accent-btn font-bold text-sm">Dodaj</button>
+                </div>
+                <div class="space-y-2">
+                  ${tasks.length ? tasks.map(t => `
+                    <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/10">
+                      <button type="button" data-toggle-task="${t.id}" class="flex-1 flex items-center gap-3 text-left">
+                        <span class="w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold border ${t.done ? 'accent-gradient border-transparent text-white' : 'border-white/25 text-transparent'}">✓</span>
+                        <span class="text-sm ${t.done ? 'line-through text-slate-500' : 'text-slate-100'}">${escapeHtml(t.title)}</span>
+                      </button>
+                      <button type="button" data-del-task="${t.id}" class="text-xs text-slate-500 hover:text-rose-400 px-2">Usuń</button>
+                    </div>
+                  `).join('') : `<div class="text-xs text-slate-500 py-2">Brak dodatkowych zadań na ten dzień.</div>`}
+                </div>
+              </div>
+            </div>
+
+            <div class="lg:col-span-5 space-y-6">
+              <div class="glass-card rounded-2xl p-5">
+                <div class="flex items-center justify-between gap-2 mb-3">
+                  <div>
+                    <h3 class="text-base font-bold text-white">Przypomnienia cykliczne</h3>
+                    <p class="text-xs text-slate-400">Co X dni oraz raz w miesiącu</p>
+                  </div>
+                  <button type="button" id="btn-open-rule-modal" class="px-3 py-1.5 rounded-xl text-xs font-semibold accent-badge">+ Nowa reguła</button>
+                </div>
+                <div class="space-y-2.5">
+                  ${state.recurringRules.map(rule => {
+                    const st = getRuleStatusForDate(rule, dKey);
+                    const done = isRuleDone(rule.id, dKey);
+                    return `
+                      <div class="p-3.5 rounded-xl border ${st.isDue ? (done ? 'accent-badge' : 'bg-indigo-500/15 border-indigo-400/40') : 'bg-white/[0.02] border-white/10'}">
+                        <div class="flex items-center justify-between gap-2">
+                          <div class="flex items-center gap-2.5">
+                            <span class="text-lg">${rule.icon || '🔁'}</span>
+                            <div>
+                              <div class="text-sm font-bold text-white ${done ? 'line-through opacity-75' : ''}">${escapeHtml(rule.title)}</div>
+                              <div class="text-xs ${st.isDue ? 'accent-text font-semibold' : 'text-slate-400'}">${st.label}</div>
+                            </div>
+                          </div>
+                          <div class="flex items-center gap-1.5">
+                            <button type="button" data-toggle-rule="${rule.id}" class="px-2.5 py-1.5 rounded-lg text-xs font-bold border ${done ? 'accent-btn border-transparent' : 'bg-white/5 text-slate-200 border-white/15'}">
+                              ${done ? 'Zrobione ✓' : 'Odhacz'}
+                            </button>
+                            <button type="button" data-del-rule="${rule.id}" class="px-2 py-1.5 rounded-lg text-xs text-slate-500 hover:text-rose-400">×</button>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+
+              <div class="glass-card rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-base font-bold text-white">⚔️ Ty vs zeszły tydzień</h3>
+                  <span class="text-[11px] text-slate-400">7 dni vs poprzednie 7</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5 text-xs">
+                  <div class="p-3 rounded-xl bg-white/[0.02] border border-white/10">
+                    <div class="text-slate-400">Regularność nawyków</div>
+                    <div class="text-base font-extrabold text-white mt-0.5">${weekly.habitPctCur}% <span class="text-[11px] font-normal text-slate-400">(było ${weekly.habitPctPrev}%)</span></div>
+                  </div>
+                  <div class="p-3 rounded-xl bg-white/[0.02] border border-white/10">
+                    <div class="text-slate-400">Średni sen</div>
+                    <div class="text-base font-extrabold text-indigo-300 mt-0.5">${weekly.avgSleepCur}h <span class="text-[11px] font-normal text-slate-400">(było ${weekly.avgSleepPrev}h)</span></div>
+                  </div>
+                  <div class="p-3 rounded-xl bg-white/[0.02] border border-white/10">
+                    <div class="text-slate-400">Średnie kalorie</div>
+                    <div class="text-base font-extrabold text-amber-300 mt-0.5">${weekly.avgKcalCur} <span class="text-[11px] font-normal text-slate-400">(${weekly.avgKcalPrev})</span></div>
+                  </div>
+                  <div class="p-3 rounded-xl bg-white/[0.02] border border-white/10">
+                    <div class="text-slate-400">Tonaż na siłowni</div>
+                    <div class="text-base font-extrabold accent-text mt-0.5">${weekly.tonnageCur} kg <span class="text-[11px] font-normal text-slate-400">(${weekly.tonnagePrev})</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="glass-card rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-base font-bold text-white">💤 Sen i energia</h3>
+                  <button type="button" data-jump-tab="sleep" class="text-xs font-semibold accent-text hover:underline">Zarządzaj →</button>
+                </div>
+                ${sleepRec
+                  ? `<div class="text-sm text-slate-200">Sen: <strong class="text-indigo-300">${sleepRec.hours}h</strong> • Jakość: <strong>${escapeHtml(sleepRec.quality)}</strong> • Energia: <strong class="accent-text">${sleepRec.energy || 4}/5</strong></div>`
+                  : `<div class="text-xs text-slate-400">Brak wpisu snu za ten dzień.</div>`}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderGymTab() {
+      const analytics = getExerciseAnalytics();
+      const sortedWorkouts = [...(state.workouts || [])].sort((a, b) => b.date.localeCompare(a.date));
+
+      return `
+        <div class="view-enter space-y-6">
+          <div class="glass-card rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-extrabold text-white">🏋️ Siłownia, Rekordy (PR) & Plan Kolejnego Treningu</h2>
+              <p class="text-xs text-slate-400">Wklej wyniki z treningu po siłowni — system wyliczy 1RM, tonaż, rekordy życiowe i zaproponuje ciężar na następną sesję</p>
+            </div>
+            <span class="px-3 py-1.5 rounded-xl text-xs font-bold accent-badge">Sesji w bazie: ${sortedWorkouts.length}</span>
+          </div>
+
+          <div class="glass-card rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-base font-extrabold text-white">🏆 Tablica Chwały — Rekordy Życiowe (PR)</h3>
+                <p class="text-xs text-slate-400">Najlepszy ciężar roboczy oraz szacowany 1RM dla każdego ćwiczenia</p>
+              </div>
+            </div>
+
+            ${analytics.length ? `
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                ${analytics.map(ex => `
+                  <div class="p-4 rounded-2xl border transition ${ex.isRecentPR ? 'bg-amber-500/10 border-amber-400/45 pr-card-glow' : 'bg-white/[0.02] border-white/10'}">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="font-bold text-sm text-white">${escapeHtml(ex.name)}</div>
+                      ${ex.isRecentPR ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400 text-slate-950">NOWY PR!</span>` : ''}
+                    </div>
+                    <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                      <div class="p-2.5 rounded-xl bg-slate-950/60 border border-white/5">
+                        <div class="text-slate-400 text-[11px]">Max roboczy</div>
+                        <div class="font-extrabold text-white mt-0.5">${ex.bestWeight} kg × ${ex.bestWeightReps}</div>
+                        <div class="text-[10px] text-slate-500">${formatShortDate(ex.bestWeightDate)}</div>
+                      </div>
+                      <div class="p-2.5 rounded-xl bg-slate-950/60 border border-white/5">
+                        <div class="text-slate-400 text-[11px]">Szacowany 1RM</div>
+                        <div class="font-extrabold accent-text mt-0.5">${ex.best1RM} kg</div>
+                        <div class="text-[10px] text-slate-500">${formatShortDate(ex.best1RMDate)}</div>
+                      </div>
+                    </div>
+                    <div class="mt-3 p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-400/25 text-[11px] text-indigo-200 leading-relaxed">
+                      <strong>Następny trening:</strong> ${escapeHtml(ex.nextPlan)}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            ` : `<div class="text-xs text-slate-400 py-4">Brak zapisanych ćwiczeń. Wklej swój pierwszy trening poniżej albo wyślij go Asystentowi AI.</div>`}
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-5 glass-card rounded-2xl p-5 space-y-3">
+              <h3 class="text-base font-bold text-white">Zapisz trening z notatki</h3>
+              <p class="text-xs text-slate-400">Wpisz każde ćwiczenie w nowej linii (np. <code class="text-slate-200">Wyciskanie na ławce: 85kg x 8, 85kg x 7</code>).</p>
+              <input id="wo-title" type="text" value="Trening Siłowy" placeholder="Nazwa treningu (np. Push / Góra / FBW)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-white/15 text-sm text-white" />
+              <input id="wo-date" type="date" value="${TODAY_KEY}" class="w-full px-3.5 py-2 rounded-xl bg-slate-900/90 border border-white/15 text-xs text-white" />
+              <textarea id="wo-raw-text" rows="5" placeholder="Wyciskanie sztangi na ławce płaskiej: 85kg x 8, 85kg x 7, 85kg x 6&#10;Wiosłowanie sztangą: 75kg x 10, 80kg x 8&#10;Podciąganie: 3x8 10kg" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-white/15 text-xs text-white leading-relaxed"></textarea>
+              <button type="button" id="btn-save-workout" class="w-full py-3 rounded-xl accent-btn font-bold text-sm">
+                Zapisz trening i przelicz progres
+              </button>
+            </div>
+
+            <div class="lg:col-span-7 glass-card rounded-2xl p-5 space-y-4">
+              <h3 class="text-base font-bold text-white">Historia treningów</h3>
+              <div class="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+                ${sortedWorkouts.length ? sortedWorkouts.map(wo => {
+                  const totalTonnage = (wo.exercises || []).reduce((s, ex) => s + (ex.sets || []).reduce((s2, st) => s2 + (Number(st.weight) || 0) * (Number(st.reps) || 0), 0), 0);
+                  return `
+                    <div class="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-2.5">
+                      <div class="flex items-center justify-between gap-2">
+                        <div>
+                          <div class="text-sm font-extrabold text-white">${escapeHtml(wo.title)}</div>
+                          <div class="text-xs text-slate-400">${formatPolishDate(wo.date)} • Tonaż: <strong class="accent-text">${Math.round(totalTonnage)} kg</strong></div>
+                        </div>
+                        <button type="button" data-del-workout="${wo.id}" class="text-xs text-slate-500 hover:text-rose-400 px-2">Usuń</button>
+                      </div>
+                      <div class="space-y-1.5">
+                        ${(wo.exercises || []).map(ex => `
+                          <div class="text-xs flex flex-wrap items-center justify-between gap-2 py-1.5 px-2.5 rounded-lg bg-slate-950/50">
+                            <span class="font-semibold text-slate-200">${escapeHtml(ex.name)}</span>
+                            <span class="text-slate-400">${(ex.sets || []).map(s => `${s.weight}kg×${s.reps}`).join(', ')}</span>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  `;
+                }).join('') : `<div class="text-xs text-slate-400">Brak zapisanych sesji treningowych.</div>`}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCalendarTab() {
+      const baseDate = new Date();
+      baseDate.setDate(1);
+      baseDate.setMonth(baseDate.getMonth() + ui.calMonthOffset);
+      const year = baseDate.getFullYear();
+      const month = baseDate.getMonth();
+      const monthTitle = baseDate.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' });
+
+      const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const dayNames = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'];
+
+      const cells = [];
+      for (let i = 0; i < firstWeekday; i++) cells.push(null);
+      for (let d = 1; d <= daysInMonth; d++) cells.push(`${year}-${pad2(month + 1)}-${pad2(d)}`);
+
+      const selectedEvents = state.events.filter(ev => ev.recurringYearly ? ev.date.slice(5) === ui.selectedDate.slice(5) : ev.date === ui.selectedDate);
+      const selectedDueRules = state.recurringRules.filter(r => getRuleStatusForDate(r, ui.selectedDate).isDue);
+
+      return `
+        <div class="view-enter space-y-6">
+          <div class="glass-card rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-extrabold text-white capitalize">${monthTitle}</h2>
+              <p class="text-xs text-slate-400">Urodziny, wydarzenia oraz cykliczne przypomnienia</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" id="cal-prev-month" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-semibold">← Poprzedni</button>
+              <button type="button" id="cal-reset-month" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold">Bieżący</button>
+              <button type="button" id="cal-next-month" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-semibold">Następny →</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-8 glass-card rounded-2xl p-5">
+              <div class="grid grid-cols-7 gap-1.5 mb-2 text-center text-xs font-bold text-slate-400">
+                ${dayNames.map(n => `<div class="py-1">${n}</div>`).join('')}
+              </div>
+              <div class="grid grid-cols-7 gap-1.5">
+                ${cells.map(key => {
+                  if (!key) return `<div class="h-20 rounded-xl bg-white/[0.01]"></div>`;
+                  const dayNum = Number(key.slice(-2));
+                  const isToday = key === TODAY_KEY;
+                  const isSelected = key === ui.selectedDate;
+                  const evs = state.events.filter(ev => ev.recurringYearly ? ev.date.slice(5) === key.slice(5) : ev.date === key);
+                  const dueRules = state.recurringRules.filter(r => getRuleStatusForDate(r, key).isDue);
+
+                  return `
+                    <button type="button" data-cal-select="${key}" class="h-20 p-2 rounded-xl border text-left flex flex-col justify-between transition ${isSelected ? 'accent-badge' : (isToday ? 'bg-indigo-500/15 border-indigo-400/50' : 'bg-white/[0.02] border-white/10 hover:border-white/25')}">
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold ${isToday ? 'text-indigo-300' : 'text-slate-200'}">${dayNum}</span>
+                        <span class="text-[11px]">${dueRules.map(r => r.icon || '🔁').join('')}</span>
+                      </div>
+                      <div class="space-y-0.5 overflow-hidden">
+                        ${evs.slice(0, 2).map(ev => `<div class="text-[10px] truncate px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 font-medium">${escapeHtml(ev.title)}</div>`).join('')}
+                      </div>
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <div class="lg:col-span-4 space-y-6">
+              <div class="glass-card rounded-2xl p-5">
+                <h3 class="text-base font-bold text-white mb-1">Dodaj wydarzenie</h3>
+                <div class="space-y-3 mt-3">
+                  <input id="ev-title" type="text" placeholder="Np. Urodziny Ani" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-white/15 text-sm text-white" />
+                  <input id="ev-date" type="date" value="${ui.selectedDate}" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-white/15 text-sm text-white" />
+                  <label class="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer">
+                    <input id="ev-yearly" type="checkbox" checked class="rounded" />
+                    Powtarzaj co roku (urodziny / rocznice)
+                  </label>
+                  <button type="button" id="btn-add-event" class="w-full py-2.5 rounded-xl accent-btn font-bold text-sm">Zapisz w kalendarzu</button>
+                </div>
+              </div>
+
+              <div class="glass-card rounded-2xl p-5">
+                <h3 class="text-base font-bold text-white mb-1 capitalize">${formatPolishDate(ui.selectedDate)}</h3>
+                <div class="space-y-2 mt-3">
+                  ${selectedDueRules.map(r => `<div class="p-2.5 rounded-xl bg-indigo-500/15 border border-indigo-400/30 text-xs text-indigo-200 font-semibold">${r.icon || '🔁'} ${escapeHtml(r.title)} (cykl)</div>`).join('')}
+                  ${selectedEvents.length ? selectedEvents.map(ev => `
+                    <div class="p-2.5 rounded-xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-between gap-2">
+                      <div><div class="text-xs font-bold text-amber-200">${escapeHtml(ev.title)}</div><div class="text-[11px] text-amber-300/80">${ev.recurringYearly ? 'Co roku' : ev.date}</div></div>
+                      <button type="button" data-del-event="${ev.id}" class="text-xs text-rose-300 hover:underline">Usuń</button>
+                    </div>
+                  `).join('') : (!selectedDueRules.length ? `<div class="text-xs text-slate-500">Brak wydarzeń na ten dzień.</div>` : '')}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCaloriesTab() {
+      const dKey = ui.selectedDate;
+      const items = state.caloriesByDate[dKey] || [];
+      const sum = getCaloriesSummary(dKey);
+      const goal = Number(state.profile.calorieGoal) || 2450;
+      const pGoal = Number(state.profile.proteinGoal) || 175;
+      const cGoal = Number(state.profile.carbsGoal) || 265;
+      const fGoal = Number(state.profile.fatGoal) || 75;
+      const remaining = goal - sum.kcal;
+      const pct = Math.min(100, Math.round((sum.kcal / Math.max(1, goal)) * 100));
+      const calc = calculateNutritionTargets(state.profile);
+
+      return `
+        <div class="view-enter space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-card rounded-2xl p-4">
+              <div class="text-xs text-slate-400 font-semibold">Kalorie (${formatShortDate(dKey)})</div>
+              <div class="text-2xl font-extrabold text-white mt-1">${sum.kcal} <span class="text-xs font-normal text-slate-400">/ ${goal} kcal</span></div>
+              <div class="w-full h-2 rounded-full bg-white/10 mt-2.5 overflow-hidden"><div class="h-full accent-bar" style="width:${pct}%"></div></div>
+              <div class="text-[11px] mt-1.5 ${remaining >= 0 ? 'accent-text' : 'text-rose-400'} font-semibold">Pozostało: ${remaining} kcal</div>
+            </div>
+            <div class="glass-card rounded-2xl p-4">
+              <div class="text-xs text-indigo-300 font-semibold">🥩 Białko</div>
+              <div class="text-2xl font-extrabold text-white mt-1">${sum.protein} <span class="text-xs font-normal text-slate-400">/ ${pGoal} g</span></div>
+              <div class="w-full h-2 rounded-full bg-white/10 mt-2.5 overflow-hidden"><div class="h-full bg-indigo-400" style="width:${Math.min(100, Math.round((sum.protein / Math.max(1, pGoal)) * 100))}%"></div></div>
+            </div>
+            <div class="glass-card rounded-2xl p-4">
+              <div class="text-xs text-amber-300 font-semibold">🍚 Węglowodany</div>
+              <div class="text-2xl font-extrabold text-white mt-1">${sum.carbs} <span class="text-xs font-normal text-slate-400">/ ${cGoal} g</span></div>
+              <div class="w-full h-2 rounded-full bg-white/10 mt-2.5 overflow-hidden"><div class="h-full bg-amber-400" style="width:${Math.min(100, Math.round((sum.carbs / Math.max(1, cGoal)) * 100))}%"></div></div>
+            </div>
+            <div class="glass-card rounded-2xl p-4">
+              <div class="text-xs text-cyan-300 font-semibold">🥑 Tłuszcze</div>
+              <div class="text-2xl font-extrabold text-white mt-1">${sum.fat} <span class="text-xs font-normal text-slate-400">/ ${fGoal} g</span></div>
+              <div class="w-full h-2 rounded-full bg-white/10 mt-2.5 overflow-hidden"><div class="h-full bg-cyan-400" style="width:${Math.min(100, Math.round((sum.fat / Math.max(1, fGoal)) * 100))}%"></div></div>
+            </div>
+          </div>
+
+          <div class="glass-card rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+            <div class="space-y-1">
+              <div class="text-xs font-extrabold uppercase tracking-wider accent-text">🧮 Kalkulator zapotrzebowania (dla ${formatWeight(state.profile.currentWeight)}, ${state.profile.heightCm} cm, ${state.profile.age} lat)</div>
+              <div class="text-xs text-slate-300">
+                BMR: <strong class="text-white">${calc.bmr} kcal</strong> • TDEE (z treningami): <strong class="text-white">${calc.tdee} kcal</strong> • Sugerowane pod Twój cel: <strong class="accent-text">${calc.calorieGoal} kcal</strong> (B: ${calc.proteinGoal}g, W: ${calc.carbsGoal}g, T: ${calc.fatGoal}g)
+              </div>
+            </div>
+            <button type="button" id="btn-apply-calc-targets" class="px-4 py-2 rounded-xl accent-badge text-xs font-bold hover:brightness-110">
+              Zastosuj te cele jako moje limity
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-5 glass-card rounded-2xl p-5">
+              <h3 class="text-base font-bold text-white mb-4">Dodaj posiłek (B / W / T)</h3>
+              <div class="space-y-3">
+                <input id="meal-name" type="text" placeholder="Np. Kurczak z ryżem i warzywami" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-white/15 text-sm text-white" />
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs text-slate-400 mb-1">Kalorie (kcal)</label>
+                    <input id="meal-kcal" type="number" placeholder="600" class="w-full px-3.5 py-2 rounded-xl bg-slate-900/90 border border-white/15 text-sm text-white" />
+                  </div>
+                  <div>
+                    <label class="block text-xs text-slate-400 mb-1">Białko (g)</label>
+                    <input id="meal-protein" type="number" placeholder="45" class="w-full px-3.5 py-2 rounded-xl bg-slate-900/90 border border-white/15 text-sm text-white" />
+                  </div>
+                  <div>
+                    <label class="block text-xs text-slate-400 mb-1">Węglowodany (g)</label>
+                    <input id="meal-carbs" type="number" placeholder="70" class="w-full px-3.5 py-2 rounded-xl bg-slate-900/90 border border-white/15 text-sm text-white" />
+                  </div>
+                  <div>
+                    <label class="block text-xs text-slate-400 mb-1">Tłuszcze (g)</label>
+                    <input id="meal-fat" type="number" placeholder="14" class="w-full px-3.5 py-2 rounded-xl bg-slate-900/90 border border-white/15 text-sm text-white" />
+                  </div>
+                </div>
+                <button type="button" id="btn-add-meal" class="w-full py-2.5 rounded-xl accent-btn font-bold text-sm">Dodaj do dziennika</button>
+              </div>
+            </div>
+
+            <div class="lg:col-span-7 glass-card rounded-2xl p-5">
+              <h3 class="text-base font-bold text-white mb-4">Posiłki (${formatShortDate(dKey)})</h3>
+              <div class="space-y-2.5">
+                ${items.length ? items.map(it => `
+                  <div class="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 flex items-center justify-between gap-3">
+                    <div>
+                      <div class="text-sm font-bold text-white">${escapeHtml(it.name)}</div>
+                      <div class="text-xs text-slate-400 mt-0.5">
+                        B: <strong class="text-indigo-300">${it.protein || 0}g</strong> •
+                        W: <strong class="text-amber-300">${it.carbs || 0}g</strong> •
+                        T: <strong class="text-cyan-300">${it.fat || 0}g</strong>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span class="text-sm font-extrabold accent-text">${it.kcal} kcal</span>
+                      <button type="button" data-del-meal="${it.id}" class="text-xs text-slate-500 hover:text-rose-400">×</button>
+                    </div>
+                  </div>
+                `).join('') : `<div class="text-xs text-slate-400 py-4">Brak wpisanych posiłków na ten dzień.</div>`}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderSleepTab() {
+      const last7 = [];
+      for (let i = 6; i >= 0; i--) {
+        const k = addDays(TODAY_KEY, -i);
+        const rec = state.sleepByDate[k];
+        last7.push({ date: k, label: formatShortDate(k), hours: rec ? Number(rec.hours) || 0 : 0, energy: rec?.energy || 0 });
+      }
+      const maxH = Math.max(9, ...last7.map(x => x.hours));
+      const todaySleep = state.sleepByDate[TODAY_KEY] || { hours: 7.5, quality: 'Dobry', energy: 4 };
+
+      return `
+        <div class="view-enter space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-5 glass-card rounded-2xl p-5">
+              <h3 class="text-base font-bold text-white mb-1">Zapisz sen i poranną energię</h3>
+              <p class="text-xs text-slate-400 mb-4">Wpływa m.in. na podpowiedzi regeneracji w zakładce Siłownia</p>
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Liczba godzin snu</label>
+                  <input id="sleep-hours" type="number" step="0.5" min="0" max="18" value="${todaySleep.hours}" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-white/15 text-base font-bold text-white" />
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Jakość snu</label>
+                  <select id="sleep-quality" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-white/15 text-sm text-white">
+                    ${['Świetny', 'Dobry', 'Średni', 'Słaby'].map(q => `<option value="${q}" ${todaySleep.quality === q ? 'selected' : ''}>${q}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Poziom energii / regeneracji (1–5)</label>
+                  <select id="sleep-energy" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-white/15 text-sm text-white">
+                    ${[5, 4, 3, 2, 1].map(n => `<option value="${n}" ${Number(todaySleep.energy || 4) === n ? 'selected' : ''}>${n}/5 ${n === 5 ? '— Pełna moc' : (n === 1 ? '— Mocne zmęczenie' : '')}</option>`).join('')}
+                  </select>
+                </div>
+                <button type="button" id="btn-save-sleep" class="w-full py-2.5 rounded-xl accent-btn font-bold text-sm">Zapisz sen</button>
+              </div>
+            </div>
+
+            <div class="lg:col-span-7 glass-card rounded-2xl p-5">
+              <h3 class="text-base font-bold text-white mb-1">Ostatnie 7 dni</h3>
+              <p class="text-xs text-slate-400 mb-6">Długość snu oraz energia (1–5)</p>
+              <div class="h-52 flex items-end justify-between gap-2 pt-4 px-2 border-b border-white/10">
+                ${last7.map(item => {
+                  const hPct = Math.min(100, Math.round((item.hours / maxH) * 100));
+                  return `
+                    <div class="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                      <span class="text-[11px] font-bold text-indigo-300">${item.hours > 0 ? item.hours + 'h' : '-'}</span>
+                      <div class="w-full max-w-[36px] rounded-t-xl accent-gradient transition-all duration-300" style="height:${Math.max(6, hPct)}%"></div>
+                      <span class="text-[10px] text-slate-400">${item.label}</span>
+                      <span class="text-[10px] accent-text font-bold">${item.energy ? '⚡' + item.energy : ''}</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderWaterTab() {
+      const dKey = TODAY_KEY;
+      const total = getWaterTotal(dKey);
+      const goal = getEffectiveWaterGoal(dKey);
+      const trainingToday = isTrainingDay(dKey);
+      const pct = Math.min(100, Math.round((total / Math.max(1, goal)) * 100));
+      const entries = state.waterByDate[dKey] || [];
+      const waveY = Math.round(92 - pct * 0.78);
+
+      return `
+        <div class="view-enter space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-5 glass-card rounded-2xl p-6 flex flex-col items-center text-center">
+              ${trainingToday ? `<div class="mb-3 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/35">🏋️ Dzień treningowy: cel +${state.profile.trainingWaterBonusMl || 500} ml</div>` : ''}
+              <div class="w-36 h-36 rounded-3xl overflow-hidden border border-cyan-400/30 bg-slate-950 relative mb-4">
+                <svg viewBox="0 0 100 100" class="w-full h-full">
+                  <g class="wave-anim">
+                    <path d="M0,${waveY} Q25,${waveY - 6} 50,${waveY} T100,${waveY} T150,${waveY} T200,${waveY} V110 H0 Z" fill="rgba(34, 211, 238, 0.35)" />
+                    <path d="M0,${waveY + 3} Q25,${waveY + 9} 50,${waveY + 3} T100,${waveY + 3} T150,${waveY + 3} T200,${waveY + 3} V110 H0 Z" fill="rgba(16, 185, 129, 0.45)" />
+                  </g>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <span class="text-2xl font-extrabold text-white drop-shadow">${pct}%</span>
+                  <span class="text-[11px] text-cyan-200 font-semibold">${total} / ${goal} ml</span>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-2.5 w-full">
+                <button type="button" data-add-water="250" class="py-2.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/30 text-cyan-200 font-bold text-xs">+250 ml</button>
+                <button type="button" data-add-water="500" class="py-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-100 font-bold text-xs">+500 ml</button>
+                <button type="button" data-add-water="750" class="py-2.5 rounded-xl accent-badge font-bold text-xs">+750 ml</button>
+              </div>
+            </div>
+
+            <div class="lg:col-span-7 glass-card rounded-2xl p-5">
+              <h3 class="text-base font-bold text-white mb-4">Dzisiejsza historia nawodnienia</h3>
+              <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                ${entries.length ? entries.slice().reverse().map(e => `
+                  <div class="p-3 rounded-xl bg-white/[0.02] border border-white/10 flex items-center justify-between">
+                    <div>
+                      <span class="text-sm font-bold text-cyan-300">+${e.ml} ml</span>
+                      <span class="text-xs text-slate-400 ml-2">• ${escapeHtml(e.source || 'Wpis')}</span>
+                    </div>
+                    <span class="text-xs text-slate-400">${e.time || ''}</span>
+                  </div>
+                `).join('') : `<div class="text-xs text-slate-400 py-4">Jeszcze nic nie wypito dzisiaj.</div>`}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderWeightTab() {
+      const startW = parseWeightInput(state.profile.startWeight);
+      const currentW = parseWeightInput(state.profile.currentWeight);
+      const goalW = parseWeightInput(state.profile.goalWeight);
+      const heightM = (Number(state.profile.heightCm) || 180) / 100;
+      const bmi = (currentW / (heightM * heightM)).toFixed(1);
+
+      const diffFromStart = Number((currentW - startW).toFixed(2));
+      const totalSpan = Math.abs(goalW - startW);
+      const doneSpan = Math.abs(currentW - startW);
+      const progressPct = totalSpan > 0.01 ? Math.max(0, Math.min(100, Math.round((doneSpan / totalSpan) * 100))) : 100;
+
+      const logs = state.weightLogs || [];
+      let chartSvg = `<div class="text-xs text-slate-500 py-8 text-center">Dodaj więcej pomiarów, aby zobaczyć wykres trendu.</div>`;
+      if (logs.length >= 2) {
+        const vals = logs.map(l => parseWeightInput(l.weight));
+        const minV = Math.min(...vals, goalW) - 0.5;
+        const maxV = Math.max(...vals, goalW) + 0.5;
+        const w = 520;
+        const h = 180;
+        const pts = logs.map((l, idx) => {
+          const x = 32 + (idx / (logs.length - 1)) * (w - 52);
+          const normY = (parseWeightInput(l.weight) - minV) / Math.max(0.1, maxV - minV);
+          const y = h - 26 - normY * (h - 48);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        });
+        const goalNorm = (goalW - minV) / Math.max(0.1, maxV - minV);
+        const goalY = Math.max(14, Math.min(h - 24, h - 26 - goalNorm * (h - 48)));
+
+        chartSvg = `
+          <svg viewBox="0 0 ${w} ${h}" class="w-full h-48 overflow-visible">
+            <line x1="32" y1="${goalY.toFixed(1)}" x2="${w - 20}" y2="${goalY.toFixed(1)}" stroke="var(--accent-2)" stroke-width="1.5" stroke-dasharray="5 5" />
+            <text x="${w - 22}" y="${(goalY - 5).toFixed(1)}" text-anchor="end" fill="#a5b4fc" font-size="11">Cel: ${formatWeight(goalW)}</text>
+            <polyline fill="none" stroke="var(--accent-1)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="${pts.join(' ')}" />
+            ${logs.map((l, idx) => {
+              const [cx, cy] = pts[idx].split(',');
+              return `<circle cx="${cx}" cy="${cy}" r="4.5" fill="var(--accent-1)" stroke="#090b10" stroke-width="2" /><text x="${cx}" y="${h - 6}" text-anchor="middle" fill="#94a3b8" font-size="10">${formatShortDate(l.date)}</text>`;
+            }).join('')}
+          </svg>
+        `;
+      }
+
+      return `
+        <div class="view-enter space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-card rounded-2xl p-4">
+              <div class="text-xs text-slate-400 font-semibold">Obecna waga</div>
+              <div class="text-2xl font-extrabold accent-text mt-1">${formatWeight(currentW)}</div>
+              <div class="text-xs text-slate-400 mt-1">Od startu: ${diffFromStart >= 0 ? '+' : ''}${diffFromStart.toFixed(2)} kg</div>
+            </div>
+            <div class="glass-card rounded-2xl p-4">
+              <div class="text-xs text-slate-400 font-semibold">Waga docelowa</div>
+              <div class="text-2xl font-extrabold text-indigo-300 mt-1">${formatWeight(goalW)}</div>
+              <div class="text-xs text-slate-400 mt-1">Start: ${formatWeight(startW)}</div>
+            </div>
+            <div class="glass-card rounded-2xl p-4">
+              <div class="text-xs text-slate-400 font-semibold">Postęp do celu</div>
+              <div class="text-2xl font-extrabold text-white mt-1">${progressPct}%</div>
+              <div class="w-full h-2 rounded-full bg-white/10 mt-2 overflow-hidden"><div class="h-full accent-bar" style="width:${progressPct}%"></div></div>
+            </div>
+            <div class="glass-card rounded-2xl p-4">
+              <div class="text-xs text-slate-400 font-semibold">BMI (${state.profile.heightCm} cm)</div>
+              <div class="text-2xl font-extrabold text-cyan-300 mt-1">${bmi}</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-5 glass-card rounded-2xl p-5 space-y-4">
+              <h3 class="text-base font-bold text-white">Nowy pomiar wagi</h3>
+              <input id="weight-input-val" type="text" inputmode="decimal" value="${currentW.toFixed(2)}" class="w-full px-4 py-3 rounded-xl bg-slate-900/90 border border-white/15 text-xl font-bold text-white" />
+              <input id="weight-input-date" type="date" value="${TODAY_KEY}" class="w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-white/15 text-sm text-white" />
+              <button type="button" id="btn-save-weight" class="w-full py-3 rounded-xl accent-btn font-bold text-sm">Zapisz pomiar</button>
+            </div>
+            <div class="lg:col-span-7 glass-card rounded-2xl p-5">
+              <h3 class="text-base font-bold text-white mb-3">Historia wagi</h3>
+              ${chartSvg}
+              <div class="mt-4 space-y-1.5 max-h-40 overflow-y-auto">
+                ${logs.slice().reverse().map(l => `
+                  <div class="flex items-center justify-between text-xs py-2 px-3 rounded-xl bg-white/[0.02] border border-white/5">
+                    <span class="text-slate-400">${formatPolishDate(l.date)}</span>
+                    <span class="font-bold accent-text">${formatWeight(l.weight)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // 7. MODALE: PODGLĄD WIECZORNY, REGUŁY, MOTYWY/AWATARY, ASYSTENT AI
+    // =========================================================================
+    function renderModals() {
+      const userAv = getUserAvatar(state.profile.userAvatar);
+      const aiAv = getAiAvatar(state.profile.aiAvatar);
+
+      const doneToday = state.habitCompletions[TODAY_KEY] || {};
+      const undoneHabits = state.habits.filter(h => !doneToday[h.id]);
+      const waterLeft = Math.max(0, getEffectiveWaterGoal(TODAY_KEY) - getWaterTotal(TODAY_KEY));
+      const tomorrowKey = addDays(TODAY_KEY, 1);
+      const tomorrowTraining = isTrainingDay(tomorrowKey);
+      const todaySleep = state.sleepByDate[TODAY_KEY] || { hours: 7.5, quality: 'Dobry', energy: 4 };
+
+      const eveningModal = ui.showEveningModal ? `
+        <div class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="glass-card rounded-3xl p-6 max-w-lg w-full space-y-5 max-h-[90vh] overflow-y-auto view-enter">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-lg font-extrabold text-white">🌙 Szybki podgląd wieczorny</h3>
+                <p class="text-xs text-slate-400">Domknij dzień przed snem i przygotuj się na jutro</p>
+              </div>
+              <button type="button" id="btn-close-evening-modal" class="text-slate-400 hover:text-white text-xl">×</button>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2.5">
+              <div class="text-xs font-bold uppercase tracking-wider accent-text">Co zostało jeszcze na dziś:</div>
+              ${undoneHabits.length ? undoneHabits.map(h => `
+                <div class="flex items-center justify-between text-xs py-1.5">
+                  <span class="text-slate-200">${h.icon || '⚡'} ${escapeHtml(h.title)}</span>
+                  <button type="button" data-evening-done-habit="${h.id}" class="px-2.5 py-1 rounded-lg accent-badge font-bold">Odhacz teraz</button>
+                </div>
+              `).join('') : `<div class="text-xs accent-text font-semibold">✓ Wszystkie dzisiejsze nawyki odhaczone!</div>`}
+              <div class="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+                <span class="text-slate-300">💧 Woda do celu: <strong>${waterLeft > 0 ? waterLeft + ' ml' : 'Cel domknięty ✓'}</strong></span>
+                ${waterLeft > 0 ? `<button type="button" id="btn-evening-drink" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-200 font-bold">+250 ml</button>` : ''}
+              </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-400/25 space-y-3">
+              <div class="text-xs font-bold text-indigo-200">💤 Szybki wpis snu i energii</div>
+              <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">Planowane / przespane (h)</label>
+                  <input id="ev-sleep-h" type="number" step="0.5" value="${todaySleep.hours}" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/15 text-sm font-bold text-white" />
+                </div>
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">Energia (1–5)</label>
+                  <select id="ev-sleep-e" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/15 text-sm text-white">
+                    ${[5, 4, 3, 2, 1].map(n => `<option value="${n}" ${Number(todaySleep.energy || 4) === n ? 'selected' : ''}>${n}/5</option>`).join('')}
+                  </select>
+                </div>
+              </div>
+              <button type="button" id="btn-evening-save-sleep" class="w-full py-2 rounded-xl accent-btn font-bold text-xs">Zapisz sen</button>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 text-xs text-slate-300 flex items-center justify-between">
+              <span>Jutro (${formatShortDate(tomorrowKey)}):</span>
+              <strong class="${tomorrowTraining ? 'text-amber-300' : 'text-slate-200'}">${tomorrowTraining ? '🏋️ Wypada siłownia!' : '🔋 Dzień nietreningowy'}</strong>
+            </div>
+          </div>
+        </div>
+      ` : '';
+
+      const ruleModal = ui.showRuleModal ? `
+        <div class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="glass-card rounded-3xl p-6 max-w-md w-full space-y-4 view-enter">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-bold text-white">Nowe przypomnienie cykliczne</h3>
+              <button type="button" id="btn-close-rule-modal" class="text-slate-400 hover:text-white text-xl">×</button>
+            </div>
+            <div class="space-y-3">
+              <input id="rule-title" type="text" placeholder="Np. Siłownia lub Kwiaty dla dziewczyny" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" />
+              <div class="grid grid-cols-4 gap-2">
+                <input id="rule-icon" type="text" value="🔁" maxlength="3" class="px-2 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-center text-base" />
+                <select id="rule-type" class="col-span-3 px-3 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-sm text-white">
+                  <option value="every_n_days">Co X dni</option>
+                  <option value="monthly_day">Raz w miesiącu (konkretny dzień)</option>
+                </select>
+              </div>
+              <div id="rule-interval-wrap">
+                <label class="block text-xs text-slate-400 mb-1">Co ile dni?</label>
+                <input id="rule-interval" type="number" min="1" max="365" value="3" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" />
+              </div>
+              <div id="rule-day-wrap" class="hidden">
+                <label class="block text-xs text-slate-400 mb-1">Dzień miesiąca (1–28)</label>
+                <input id="rule-day" type="number" min="1" max="28" value="14" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" />
+              </div>
+              <button type="button" id="btn-save-rule" class="w-full py-2.5 rounded-xl accent-btn font-bold text-sm">Dodaj regułę</button>
+            </div>
+          </div>
+        </div>
+      ` : '';
+
+      const avatarModal = ui.showAvatarModal ? `
+        <div class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="glass-card rounded-3xl p-6 max-w-2xl w-full space-y-6 max-h-[90vh] overflow-y-auto view-enter">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-lg font-extrabold text-white">Personalizacja, Kolory i Awatary</h3>
+                <p class="text-xs text-slate-400">Dopasuj kolorystykę YouVsYou, awatary oraz klucz Gemini API</p>
+              </div>
+              <button type="button" id="btn-close-avatar-modal" class="text-slate-400 hover:text-white text-xl">×</button>
+            </div>
+
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider accent-text mb-2.5">Kolor przewodni aplikacji</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                ${ACCENT_THEMES.map(th => {
+                  const active = (state.profile.accentTheme || 'emerald_indigo') === th.id;
+                  return `
+                    <button type="button" data-pick-accent="${th.id}" class="p-3 rounded-2xl border flex items-center gap-3 text-left transition ${active ? 'accent-badge' : 'bg-white/[0.02] border-white/10'}">
+                      <span class="w-7 h-7 rounded-lg shrink-0" style="background:linear-gradient(135deg,${th.c1},${th.c2})"></span>
+                      <div>
+                        <div class="text-xs font-bold text-white">${th.name}</div>
+                        <div class="text-[11px] text-slate-400">${th.desc}</div>
+                      </div>
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2.5">Motyw tła</div>
+              <div class="grid grid-cols-3 gap-2.5">
+                ${BG_MODES.map(m => {
+                  const active = (state.profile.bgMode || 'dark') === m.id;
+                  return `
+                    <button type="button" data-pick-bg="${m.id}" class="py-2.5 px-3 rounded-xl border text-xs font-bold transition ${active ? 'accent-badge' : 'bg-white/[0.02] border-white/10 text-slate-300'}">
+                      ${m.name}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider accent-text mb-2.5">Twój awatar</div>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                ${USER_AVATARS.map(av => {
+                  const active = state.profile.userAvatar === av.id;
+                  return `
+                    <button type="button" data-pick-user-avatar="${av.id}" class="p-2.5 rounded-2xl border flex items-center gap-2.5 text-left transition ${active ? 'accent-badge' : 'bg-white/[0.02] border-white/10'}">
+                      <div class="w-10 h-10 rounded-xl overflow-hidden shrink-0">${av.svg}</div>
+                      <div class="text-xs font-bold text-white truncate">${av.name}</div>
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-indigo-300 mb-2.5">Awatar Asystenta AI</div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                ${AI_AVATARS.map(av => {
+                  const active = state.profile.aiAvatar === av.id;
+                  return `
+                    <button type="button" data-pick-ai-avatar="${av.id}" class="p-2.5 rounded-2xl border flex flex-col items-center gap-1.5 text-center transition ${active ? 'accent-badge' : 'bg-white/[0.02] border-white/10'}">
+                      <div class="w-11 h-11 rounded-xl overflow-hidden">${av.svg}</div>
+                      <div class="text-xs font-bold text-white">${av.name}</div>
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-slate-900/90 border border-white/10 space-y-2">
+              <label class="block text-xs font-bold text-slate-200">Klucz Gemini API (opcjonalny, do rozmów AI na GitHub Pages)</label>
+              <input id="input-gemini-key" type="password" value="${escapeAttr(state.profile.geminiApiKey || '')}" placeholder="AIza..." class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-white/15 text-xs text-white" />
+              <div class="flex items-center justify-between pt-2">
+                <button type="button" id="btn-reopen-quiz" class="text-xs font-semibold text-amber-400 hover:underline">Otwórz ponownie kreator profilu</button>
+                <button type="button" id="btn-save-profile-extras" class="px-4 py-2 rounded-xl accent-btn font-bold text-xs">Zapisz ustawienia</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ` : '';
+
+      const aiDrawer = ui.aiOpen ? `
+        <div class="fixed inset-y-0 right-0 z-40 w-full max-w-md glass-card border-l border-white/10 flex flex-col shadow-2xl view-enter">
+          <div class="p-4 border-b border-white/10 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl overflow-hidden shrink-0">${aiAv.svg}</div>
+              <div>
+                <div class="text-sm font-extrabold text-white">Asystent AI • YouVsYou</div>
+                <div class="text-[11px] accent-text font-semibold">${state.profile.geminiApiKey ? 'Połączony z Gemini API' : 'Tryb szybki (lokalny)'}</div>
+              </div>
+            </div>
+            <button type="button" id="btn-close-ai" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 text-sm">✕</button>
+          </div>
+
+          <div id="ai-messages-box" class="flex-1 overflow-y-auto p-4 space-y-3">
+            ${state.aiMessages.map(m => {
+              const isUser = m.role === 'user';
+              return `
+                <div class="flex items-start gap-2.5 ${isUser ? 'flex-row-reverse' : ''}">
+                  <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 mt-0.5">${isUser ? userAv.svg : aiAv.svg}</div>
+                  <div class="max-w-[82%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${isUser ? 'accent-badge' : 'bg-white/[0.04] border border-white/10 text-slate-200'}">
+                    <div>${formatSimpleMarkdown(m.text)}</div>
+                    ${Array.isArray(m.applied) && m.applied.length ? `
+                      <div class="mt-2 pt-2 border-t border-white/10 space-y-1">
+                        ${m.applied.map(a => `<div class="text-[11px] font-semibold accent-text">✓ ${escapeHtml(a)}</div>`).join('')}
+                      </div>
+                    ` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+            ${ui.aiLoading ? `<div class="text-xs text-slate-400 italic px-2">Asystent analizuje wpis...</div>` : ''}
+          </div>
+
+          <div class="p-3 border-t border-white/10 bg-slate-950/60 space-y-2.5">
+            <div class="flex flex-wrap gap-1.5">
+              <button type="button" data-ai-quick="Wypiłem 500 ml wody i wziąłem kreatynę" class="text-[11px] px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10">+500 ml wody & kreatyna</button>
+              <button type="button" data-ai-quick="Wyciskanie na ławce płaskiej: 85kg x 8, 87.5kg x 6" class="text-[11px] px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10">Zapisz serię na ławce</button>
+            </div>
+            <div class="flex gap-2">
+              <input id="ai-prompt-input" type="text" value="${escapeAttr(ui.aiDraft)}" placeholder="Napisz co zrobiłeś, zjadłeś lub podniosłeś..." class="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-xs text-white" />
+              <button type="button" id="btn-send-ai" class="px-4 py-2.5 rounded-xl accent-btn font-bold text-xs">Wyślij</button>
+            </div>
+          </div>
+        </div>
+      ` : '';
+
+      return eveningModal + ruleModal + avatarModal + aiDrawer;
+    }
+
+    // =========================================================================
+    // 8. GŁÓWNY RENDER I OBSŁUGA ZDARZEŃ
+    // =========================================================================
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+    function escapeAttr(str) { return escapeHtml(str).replace(/'/g, '&#39;'); }
+    function formatSimpleMarkdown(str) {
+      return escapeHtml(str).replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-bold">$1</strong>');
+    }
+
+    function render() {
+      applyThemeVariables();
+
+      if (!state.onboardingCompleted) {
+        renderOnboarding();
+        return;
+      }
+
+      const navItems = [
+        { id: 'today', label: 'Dziś & Nawyki', icon: '⚡' },
+        { id: 'gym', label: 'Siłownia & Progres', icon: '🏋️' },
+        { id: 'calendar', label: 'Kalendarz', icon: '📅' },
+        { id: 'calories', label: 'Kalorie & Makro', icon: '🍽️' },
+        { id: 'sleep', label: 'Sen & Energia', icon: '💤' },
+        { id: 'water', label: 'Woda', icon: '💧' },
+        { id: 'weight', label: 'Waga & Cel', icon: '⚖️' }
+      ];
+
+      const userAv = getUserAvatar(state.profile.userAvatar);
+      const aiAv = getAiAvatar(state.profile.aiAvatar);
+
+      let mainContent = '';
+      if (ui.activeTab === 'today') mainContent = renderTodayTab();
+      else if (ui.activeTab === 'gym') mainContent = renderGymTab();
+      else if (ui.activeTab === 'calendar') mainContent = renderCalendarTab();
+      else if (ui.activeTab === 'calories') mainContent = renderCaloriesTab();
+      else if (ui.activeTab === 'sleep') mainContent = renderSleepTab();
+      else if (ui.activeTab === 'water') mainContent = renderWaterTab();
+      else if (ui.activeTab === 'weight') mainContent = renderWeightTab();
+
+      document.getElementById('app').innerHTML = `
+        <div class="min-h-screen flex flex-col lg:flex-row">
+          <aside class="lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-white/10 bg-slate-950/60 backdrop-blur-xl p-4 lg:p-5 flex flex-col justify-between gap-4">
+            <div class="space-y-5">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 rounded-xl accent-gradient flex items-center justify-center font-extrabold text-white text-sm">Y</div>
+                  <div>
+                    <div class="font-extrabold tracking-tight text-base text-white leading-none">YouVsYou</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5">Ty kontra wczorajszy Ty</div>
+                  </div>
+                </div>
+                <button type="button" id="btn-open-ai-top" class="lg:hidden px-3 py-1.5 rounded-xl accent-badge text-xs font-bold flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded overflow-hidden inline-block">${aiAv.svg}</span> AI
+                </button>
+              </div>
+
+              <div class="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-2.5">
+                <button type="button" id="btn-open-avatar-modal" class="flex items-center gap-3 text-left min-w-0 flex-1 group">
+                  <div class="w-11 h-11 rounded-xl overflow-hidden shrink-0 ring-2 ring-white/15 group-hover:ring-white/40 transition">${userAv.svg}</div>
+                  <div class="min-w-0">
+                    <div class="text-sm font-bold text-white truncate">${escapeHtml(state.profile.name)}</div>
+                    <div class="text-[11px] accent-text font-semibold truncate">${formatWeight(state.profile.currentWeight)} → ${formatWeight(state.profile.goalWeight)}</div>
+                  </div>
+                </button>
+                <button type="button" id="btn-open-avatar-modal-gear" title="Kolory, awatary i ustawienia" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs">🎨</button>
+              </div>
+
+              <nav class="flex lg:flex-col gap-1.5 overflow-x-auto pb-1 lg:pb-0">
+                ${navItems.map(item => {
+                  const active = ui.activeTab === item.id;
+                  return `
+                    <button type="button" data-nav-tab="${item.id}" class="px-3.5 py-2.5 rounded-xl flex items-center gap-3 text-sm font-semibold whitespace-nowrap transition ${active ? 'accent-badge' : 'text-slate-400 hover:text-slate-100 hover:bg-white/5 border border-transparent'}">
+                      <span class="text-base">${item.icon}</span>
+                      <span>${item.label}</span>
+                    </button>
+                  `;
+                }).join('')}
+              </nav>
+            </div>
+
+            <div class="hidden lg:block space-y-2.5 pt-4 border-t border-white/10">
+              <button type="button" id="btn-open-ai-side" class="w-full p-3 rounded-2xl accent-badge hover:brightness-110 flex items-center gap-3 text-left transition">
+                <div class="w-9 h-9 rounded-xl overflow-hidden shrink-0">${aiAv.svg}</div>
+                <div>
+                  <div class="text-xs font-extrabold text-white">Asystent AI</div>
+                  <div class="text-[11px] text-slate-300">Wpisuj zdaniami & treningi</div>
+                </div>
+              </button>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" id="btn-export-json" class="py-2 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[11px] font-semibold text-slate-300">Kopia JSON</button>
+                <button type="button" id="btn-import-json-trigger" class="py-2 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[11px] font-semibold text-slate-300">Wczytaj</button>
+                <input id="input-import-json" type="file" accept=".json" class="hidden" />
+              </div>
+            </div>
+          </aside>
+
+          <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto">
+            ${mainContent}
+          </main>
+        </div>
+
+        ${renderModals()}
+      `;
+
+      bindEvents();
+    }
+
+    function bindEvents() {
+      document.querySelectorAll('[data-nav-tab]').forEach(btn => btn.addEventListener('click', () => { ui.activeTab = btn.getAttribute('data-nav-tab'); render(); }));
+      document.querySelectorAll('[data-jump-tab]').forEach(btn => btn.addEventListener('click', () => { ui.activeTab = btn.getAttribute('data-jump-tab'); render(); }));
+      document.querySelectorAll('[data-day-nav]').forEach(btn => btn.addEventListener('click', () => {
+        const val = btn.getAttribute('data-day-nav');
+        ui.selectedDate = val === 'today' ? TODAY_KEY : addDays(ui.selectedDate, Number(val));
+        render();
+      }));
+
+      document.getElementById('btn-open-evening-modal')?.addEventListener('click', () => { ui.showEveningModal = true; render(); });
+      document.getElementById('btn-close-evening-modal')?.addEventListener('click', () => { ui.showEveningModal = false; render(); });
+      document.querySelectorAll('[data-evening-done-habit]').forEach(btn => btn.addEventListener('click', () => {
+        const hid = btn.getAttribute('data-evening-done-habit');
+        if (!state.habitCompletions[TODAY_KEY]) state.habitCompletions[TODAY_KEY] = {};
+        state.habitCompletions[TODAY_KEY][hid] = true;
+        saveState();
+        render();
+      }));
+      document.getElementById('btn-evening-drink')?.addEventListener('click', () => { addWaterEntry(TODAY_KEY, 250, 'Podgląd wieczorny'); render(); });
+      document.getElementById('btn-evening-save-sleep')?.addEventListener('click', () => {
+        const h = Number(document.getElementById('ev-sleep-h')?.value) || 7.5;
+        const e = Number(document.getElementById('ev-sleep-e')?.value) || 4;
+        state.sleepByDate[TODAY_KEY] = { hours: Number(h.toFixed(1)), quality: e >= 4 ? 'Dobry' : 'Średni', energy: e };
+        saveState();
+        render();
       });
 
-      document.getElementById('btn-next-slide')?.addEventListener('click', () => {
-        syncCurrentSlideInput();
-        nextStep();
+      document.getElementById('btn-toggle-habit-editor')?.addEventListener('click', () => { ui.showHabitEditor = !ui.showHabitEditor; render(); });
+      document.getElementById('btn-add-habit')?.addEventListener('click', () => {
+        const title = (document.getElementById('new-habit-title')?.value || '').trim();
+        if (!title) return;
+        state.habits.push({
+          id: 'h_' + Date.now(),
+          title,
+          icon: (document.getElementById('new-habit-icon')?.value || '✅').trim() || '✅',
+          timeOfDay: document.getElementById('new-habit-tod')?.value || 'all'
+        });
+        saveState();
+        render();
+      });
+      document.querySelectorAll('[data-toggle-habit]').forEach(btn => btn.addEventListener('click', () => {
+        const hid = btn.getAttribute('data-toggle-habit');
+        const dKey = ui.selectedDate;
+        if (!state.habitCompletions[dKey]) state.habitCompletions[dKey] = {};
+        state.habitCompletions[dKey][hid] = !state.habitCompletions[dKey][hid];
+        saveState();
+        render();
+      }));
+      document.querySelectorAll('[data-edit-habit]').forEach(btn => btn.addEventListener('click', () => {
+        const h = state.habits.find(x => x.id === btn.getAttribute('data-edit-habit'));
+        if (!h) return;
+        const updated = prompt('Nowa nazwa nawyku:', h.title);
+        if (updated && updated.trim()) { h.title = updated.trim(); saveState(); render(); }
+      }));
+      document.querySelectorAll('[data-del-habit]').forEach(btn => btn.addEventListener('click', () => {
+        state.habits = state.habits.filter(x => x.id !== btn.getAttribute('data-del-habit'));
+        saveState();
+        render();
+      }));
+
+      const addTaskNow = () => {
+        const title = (document.getElementById('new-task-input')?.value || '').trim();
+        if (!title) return;
+        if (!state.tasksByDate[ui.selectedDate]) state.tasksByDate[ui.selectedDate] = [];
+        state.tasksByDate[ui.selectedDate].push({ id: 'tsk_' + Date.now(), title, done: false });
+        saveState();
+        render();
+      };
+      document.getElementById('btn-add-task')?.addEventListener('click', addTaskNow);
+      document.getElementById('new-task-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addTaskNow(); } });
+      document.querySelectorAll('[data-toggle-task]').forEach(btn => btn.addEventListener('click', () => {
+        const found = (state.tasksByDate[ui.selectedDate] || []).find(t => t.id === btn.getAttribute('data-toggle-task'));
+        if (found) { found.done = !found.done; saveState(); render(); }
+      }));
+      document.querySelectorAll('[data-del-task]').forEach(btn => btn.addEventListener('click', () => {
+        state.tasksByDate[ui.selectedDate] = (state.tasksByDate[ui.selectedDate] || []).filter(t => t.id !== btn.getAttribute('data-del-task'));
+        saveState();
+        render();
+      }));
+
+      document.querySelectorAll('[data-toggle-rule]').forEach(btn => btn.addEventListener('click', () => toggleRuleCompletion(btn.getAttribute('data-toggle-rule'), ui.selectedDate)));
+      document.querySelectorAll('[data-del-rule]').forEach(btn => btn.addEventListener('click', () => {
+        state.recurringRules = state.recurringRules.filter(r => r.id !== btn.getAttribute('data-del-rule'));
+        saveState();
+        render();
+      }));
+      document.getElementById('btn-open-rule-modal')?.addEventListener('click', () => { ui.showRuleModal = true; render(); });
+      document.getElementById('btn-close-rule-modal')?.addEventListener('click', () => { ui.showRuleModal = false; render(); });
+      document.getElementById('rule-type')?.addEventListener('change', e => {
+        const isMonthly = e.target.value === 'monthly_day';
+        document.getElementById('rule-interval-wrap')?.classList.toggle('hidden', isMonthly);
+        document.getElementById('rule-day-wrap')?.classList.toggle('hidden', !isMonthly);
+      });
+      document.getElementById('btn-save-rule')?.addEventListener('click', () => {
+        const title = (document.getElementById('rule-title')?.value || '').trim();
+        if (!title) return;
+        state.recurringRules.push({
+          id: 'rule_' + Date.now(),
+          title,
+          icon: (document.getElementById('rule-icon')?.value || '🔁').trim() || '🔁',
+          type: document.getElementById('rule-type')?.value || 'every_n_days',
+          intervalDays: Math.max(1, Number(document.getElementById('rule-interval')?.value) || 3),
+          dayOfMonth: Math.min(28, Math.max(1, Number(document.getElementById('rule-day')?.value) || 14)),
+          anchorDate: ui.selectedDate
+        });
+        ui.showRuleModal = false;
+        saveState();
+        render();
       });
 
-      document.getElementById('btn-skip-onboarding')?.addEventListener('click', () => {
-        syncCurrentSlideInput();
-        finishOnboarding();
+      document.getElementById('btn-save-workout')?.addEventListener('click', () => {
+        const raw = document.getElementById('wo-raw-text')?.value || '';
+        const title = (document.getElementById('wo-title')?.value || 'Trening Siłowy').trim();
+        const date = document.getElementById('wo-date')?.value || TODAY_KEY;
+        const exercises = parseWorkoutText(raw);
+        if (!exercises.length) {
+          alert('Wpisz chociaż jedno ćwiczenie w formacie np. "Wyciskanie na ławce: 85kg x 8, 85kg x 7".');
+          return;
+        }
+        state.workouts.push({
+          id: 'wo_' + Date.now(),
+          date,
+          title,
+          exercises
+        });
+        saveState();
+        render();
+      });
+      document.querySelectorAll('[data-del-workout]').forEach(btn => btn.addEventListener('click', () => {
+        state.workouts = state.workouts.filter(w => w.id !== btn.getAttribute('data-del-workout'));
+        saveState();
+        render();
+      }));
+
+      document.getElementById('cal-prev-month')?.addEventListener('click', () => { ui.calMonthOffset -= 1; render(); });
+      document.getElementById('cal-next-month')?.addEventListener('click', () => { ui.calMonthOffset += 1; render(); });
+      document.getElementById('cal-reset-month')?.addEventListener('click', () => { ui.calMonthOffset = 0; ui.selectedDate = TODAY_KEY; render(); });
+      document.querySelectorAll('[data-cal-select]').forEach(btn => btn.addEventListener('click', () => { ui.selectedDate = btn.getAttribute('data-cal-select'); render(); }));
+      document.getElementById('btn-add-event')?.addEventListener('click', () => {
+        const title = (document.getElementById('ev-title')?.value || '').trim();
+        const date = document.getElementById('ev-date')?.value || ui.selectedDate;
+        if (!title || !date) return;
+        state.events.push({ id: 'evt_' + Date.now(), title, date, recurringYearly: Boolean(document.getElementById('ev-yearly')?.checked) });
+        saveState();
+        render();
+      });
+      document.querySelectorAll('[data-del-event]').forEach(btn => btn.addEventListener('click', () => {
+        state.events = state.events.filter(e => e.id !== btn.getAttribute('data-del-event'));
+        saveState();
+        render();
+      }));
+
+      document.getElementById('btn-apply-calc-targets')?.addEventListener('click', () => {
+        const calc = calculateNutritionTargets(state.profile);
+        state.profile.calorieGoal = calc.calorieGoal;
+        state.profile.proteinGoal = calc.proteinGoal;
+        state.profile.carbsGoal = calc.carbsGoal;
+        state.profile.fatGoal = calc.fatGoal;
+        state.profile.waterGoalMl = calc.waterGoalMl;
+        saveState();
+        render();
+      });
+      document.getElementById('btn-add-meal')?.addEventListener('click', () => {
+        const name = (document.getElementById('meal-name')?.value || '').trim() || 'Posiłek';
+        const kcal = Number(document.getElementById('meal-kcal')?.value) || 0;
+        const protein = Number(document.getElementById('meal-protein')?.value) || 0;
+        const carbs = Number(document.getElementById('meal-carbs')?.value) || 0;
+        const fat = Number(document.getElementById('meal-fat')?.value) || 0;
+        if (kcal <= 0 && protein <= 0 && carbs <= 0 && fat <= 0) return;
+        addMealEntry(ui.selectedDate, name, kcal, protein, carbs, fat);
+        render();
+      });
+      document.querySelectorAll('[data-del-meal]').forEach(btn => btn.addEventListener('click', () => {
+        state.caloriesByDate[ui.selectedDate] = (state.caloriesByDate[ui.selectedDate] || []).filter(m => m.id !== btn.getAttribute('data-del-meal'));
+        saveState();
+        render();
+      }));
+
+      document.getElementById('btn-save-sleep')?.addEventListener('click', () => {
+        const hours = Number(document.getElementById('sleep-hours')?.value) || 0;
+        const quality = document.getElementById('sleep-quality')?.value || 'Dobry';
+        const energy = Number(document.getElementById('sleep-energy')?.value) || 4;
+        state.sleepByDate[TODAY_KEY] = { hours: Number(hours.toFixed(1)), quality, energy };
+        saveState();
+        render();
       });
 
-      document.querySelectorAll('[data-pick-gender
+      document.querySelectorAll('[data-add-water]').forEach(btn => btn.addEventListener('click', () => {
+        addWaterEntry(TODAY_KEY, Number(btn.getAttribute('data-add-water')), 'Szybki przycisk');
+        render();
+      }));
+
+      document.getElementById('btn-save-weight')?.addEventListener('click', () => {
+        const parsed = parseWeightInput(document.getElementById('weight-input-val')?.value);
+        const dKey = document.getElementById('weight-input-date')?.value || TODAY_KEY;
+        if (parsed > 0) { addWeightEntry(dKey, parsed); render(); }
+      });
+
+      const openAvModal = () => { ui.showAvatarModal = true; render(); };
+      document.getElementById('btn-open-avatar-modal')?.addEventListener('click', openAvModal);
+      document.getElementById('btn-open-avatar-modal-gear')?.addEventListener('click', openAvModal);
+      document.getElementById('btn-close-avatar-modal')?.addEventListener('click', () => { ui.showAvatarModal = false; render(); });
+
+      document.querySelectorAll('[data-pick-accent]').forEach(btn => btn.addEventListener('click', () => {
+        state.profile.accentTheme = btn.getAttribute('data-pick-accent');
+        saveState();
+        render();
+      }));
+      document.querySelectorAll('[data-pick-bg]').forEach(btn => btn.addEventListener('click', () => {
+        state.profile.bgMode = btn.getAttribute('data-pick-bg');
+        saveState();
+        render();
+      }));
+      document.querySelectorAll('[data-pick-user-avatar]').forEach(btn => btn.addEventListener('click', () => {
+        state.profile.userAvatar = btn.getAttribute('data-pick-user-avatar');
+        saveState();
+        render();
+      }));
+      document.querySelectorAll('[data-pick-ai-avatar]').forEach(btn => btn.addEventListener('click', () => {
+        state.profile.aiAvatar = btn.getAttribute('data-pick-ai-avatar');
+        saveState();
+        render();
+      }));
+      document.getElementById('btn-save-profile-extras')?.addEventListener('click', () => {
+        const keyInput = document.getElementById('input-gemini-key');
+        if (keyInput) state.profile.geminiApiKey = keyInput.value.trim();
+        ui.showAvatarModal = false;
+        saveState();
+        render();
+      });
+      document.getElementById('btn-reopen-quiz')?.addEventListener('click', () => { ui.showAvatarModal = false; openOnboarding(); });
+
+      const openAi = () => { ui.aiOpen = true; render(); };
+      document.getElementById('btn-open-ai-side')?.addEventListener('click', openAi);
+      document.getElementById('btn-open-ai-top')?.addEventListener('click', openAi);
+      document.getElementById('btn-close-ai')?.addEventListener('click', () => { ui.aiOpen = false; render(); });
+      document.getElementById('btn-send-ai')?.addEventListener('click', () => sendAiPrompt(document.getElementById('ai-prompt-input')?.value || ''));
+      document.getElementById('ai-prompt-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendAiPrompt(e.target.value); } });
+      document.querySelectorAll('[data-ai-quick]').forEach(btn => btn.addEventListener('click', () => sendAiPrompt(btn.getAttribute('data-ai-quick'))));
+
+      document.getElementById('btn-export-json')?.addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `YouVsYou-kopia-${TODAY_KEY}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+      document.getElementById('btn-import-json-trigger')?.addEventListener('click', () => document.getElementById('input-import-json')?.click());
+      document.getElementById('input-import-json')?.addEventListener('change', e => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(String(reader.result));
+            if (parsed && typeof parsed === 'object') {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+              state = loadState();
+              render();
+            }
+          } catch (_) {}
+        };
+        reader.readAsText(file);
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>
