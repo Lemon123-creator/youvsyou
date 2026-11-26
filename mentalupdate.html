@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="pl" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouVsYou — Twój Tracker, Journal i Progres</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --bg-base: #090b10;
+      --bg-surface: rgba(17, 21, 32, 0.84);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --text-main: #f1f5f9;
+      --accent-1: #10b981;
+      --accent-2: #6366f1;
+      --accent-rgb: 16, 185, 129;
+      --accent2-rgb: 99, 102, 241;
+    }
+    * { box-sizing: border-box; }
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+    }
+    .ambient-bg {
+      background:
+        radial-gradient(circle at 12% 10%, rgba(var(--accent-rgb), 0.11), transparent 36%),
+        radial-gradient(circle at 88% 16%, rgba(var(--accent2-rgb), 0.11), transparent 40%),
+        var(--bg-base);
+    }
+    .glass-card {
+      background: var(--bg-surface);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.55);
+    }
+    .accent-gradient { background: linear-gradient(135deg, var(--accent-1), var(--accent-2)); }
+    .accent-bar { background: linear-gradient(90deg, var(--accent-1), var(--accent-2)); }
+    .accent-text { color: var(--accent-1); }
+    .accent-badge {
+      background-color: rgba(var(--accent-rgb), 0.15);
+      border: 1px solid rgba(var(--accent-rgb), 0.34);
+      color: var(--accent-1);
+    }
+    .accent-btn {
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      color: #ffffff;
+      box-shadow: 0 8px 24px -6px rgba(var(--accent-rgb), 0.45);
+    }
+    .accent-btn:hover { filter: brightness(1.08); }
+    body.theme-light {
+      --bg-base: #f1f5f9;
+      --bg-surface: rgba(255, 255, 255, 0.92);
+      --border-subtle: rgba(15, 23, 42, 0.10);
+      --text-main: #0f172a;
+    }
+    body.theme-light .text-white { color: #0f172a !important; }
+    body.theme-light .text-slate-100,
+    body.theme-light .text-slate-200,
+    body.theme-light .text-slate-300 { color: #334155 !important; }
+    body.theme-light .text-slate-400 { color: #64748b !important; }
+    body.theme-light .bg-slate-900,
+    body.theme-light .bg-slate-950 { background-color: #f8fafc !important; }
+    body.theme-oled { --bg-base: #000000; --bg-surface: rgba(10, 12, 18, 0.94); }
+  </style>
+</head>
+<body class="ambient-bg min-h-screen antialiased">
+  <div id="app"></div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = 'youvsyou_tracker_v5';
+
+      const ACCENT_THEMES = [
+        { id: 'emerald_indigo', name: 'Szmaragd & Indygo', c1: '#10b981', c2: '#6366f1', rgb1: '16, 185, 129', rgb2: '99, 102, 241' },
+        { id: 'cyan_cobalt', name: 'Cyjan & Kobalt', c1: '#06b6d4', c2: '#3b82f6', rgb1: '6, 182, 212', rgb2: '59, 130, 246' },
+        { id: 'amber_copper', name: 'Bursztyn & Miedź', c1: '#f59e0b', c2: '#ea580c', rgb1: '245, 158, 11', rgb2: '234, 88, 12' },
+        { id: 'crimson_violet', name: 'Karmazyn & Fiolet', c1: '#f43f5e', c2: '#8b5cf6', rgb1: '244, 63, 94', rgb2: '139, 92, 246' }
+      ];
+
+      const BG_MODES = [
+        { id: 'dark', name: 'Ciemny Grafit' },
+        { id: 'oled', name: 'Czerń OLED' },
+        { id: 'light', name: 'Jasny Dzień' }
+      ];
+
+      const USER_AVATARS = [
+        { id: 'cyber_fighter', name: 'Cyber Fighter', icon: '⚡' },
+        { id: 'gentleman_stache', name: 'Wąsaty Dżentelmen', icon: '🧔' },
+        { id: 'lifting_pro', name: 'Lifting Pro', icon: '🏋️' },
+        { id: 'night_focus', name: 'Nocny Fokus', icon: '🎯' }
+      ];
+
+      function pad2(n) { return String(n).padStart(2, '0'); }
+      function toDateKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+      function parseDateKey(key) {
+        const parts = String(key).split('-').map(Number);
+        return new Date(parts[0], parts[1] - 1, parts[2]);
+      }
+      function addDays(dateKey, delta) {
+        const d = parseDateKey(dateKey);
+        d.setDate(d.getDate() + delta);
+        return toDateKey(d);
+      }
+      function daysBetween(startKey, endKey) {
+        const a = parseDateKey(startKey);
+        const b = parseDateKey(endKey);
+        return Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 86400000);
+      }
+      function formatPolishDate(dateKey) {
+        return parseDateKey(dateKey).toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      }
+      function formatShortDate(dateKey) {
+        return parseDateKey(dateKey).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' });
+      }
+      function parseWeightInput(val) {
+        if (typeof val === 'number') return Number.isFinite(val) ? Number(val.toFixed(2)) : 0;
+        const cleaned = String(val || '').trim().replace(',', '.').replace(/[^0-9.]/g, '');
+        const num = parseFloat(cleaned);
+        return Number.isFinite(num) ? Number(num.toFixed(2)) : 0;
+      }
+      function formatWeight(val) {
+        return parseWeightInput(val).toFixed(2) + ' kg';
+      }
+      function escapeHtml(str) {
+        return String(str == null ? '' : str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+      function escapeAttr(str) {
+        return escapeHtml(str).replace(/'/g, '&#39;');
+      }
+
+      const TODAY_KEY = toDateKey(new Date());
+
+      function getDefaultData() {
+        const startW = 82.00;
+        const goalW = 78.00;
+        const curMonth = TODAY_KEY.slice(0, 7);
+        const d1 = addDays(TODAY_KEY, -6);
+        const d2 = addDays(TODAY_KEY, -4);
+        const d3 = addDays(TODAY_KEY, -2);
+
+        return {
+          onboardingCompleted: false,
+          profile: {
+            name: 'Zawodnik',
+            gender: 'male',
+            age: 22,
+            heightCm: 180,
+            startWeight: startW,
+            currentWeight: startW,
+            goalWeight: goalW,
+            goalType: 'recomp',
+            calorieGoal: 2450,
+            proteinGoal: 175,
+            carbsGoal: 265,
+            fatGoal: 75,
+            waterGoalMl: 3000,
+            trainingWaterBonusMl: 500,
+            userAvatar: 'cyber_fighter',
+            accentTheme: 'emerald_indigo',
+            bgMode: 'dark',
+            focusAreas: ['mental', 'discipline', 'body'],
+            enabledModules: {
+              gym: true,
+              calories: true,
+              journal: true,
+              sleep: true,
+              water: true,
+              weight: true,
+              calendar: true
+            }
+          },
+          habits: [
+            { id: 'h_creatine', title: 'Kreatyna', icon: '⚡' },
+            { id: 'h_water', title: 'Woda (cel dzienny)', icon: '💧' },
+            { id: 'h_teeth_am', title: 'Mycie zębów rano', icon: '🪥' },
+            { id: 'h_teeth_pm', title: 'Mycie zębów wieczorem', icon: '🌙' }
+          ],
+          habitCompletions: {},
+          recurringRules: [
+            { id: 'r_gym_3d', title: 'Siłownia', icon: '🏋️', type: 'every_n_days', intervalDays: 3, anchorDate: TODAY_KEY, isGymRule: true },
+            { id: 'r_flowers', title: 'Kwiaty dla dziewczyny', icon: '💐', type: 'monthly_day', dayOfMonth: 14 }
+          ],
+          recurringCompletions: {},
+          tasksByDate: {
+            [TODAY_KEY]: [{ id: 't_1', title: 'Sprawdzić podsumowanie dnia w YouVsYou', done: false }]
+          },
+          events: [
+            { id: 'e_1', title: 'Urodziny dziewczyny', date: curMonth + '-14', recurringYearly: true }
+          ],
+          caloriesByDate: {},
+          sleepByDate: {
+            [d1]: { hours: 7.5, quality: 'Dobry', energy: 4 },
+            [d2]: { hours: 6.5, quality: 'Średni', energy: 3 },
+            [d3]: { hours: 8.0, quality: 'Świetny', energy: 5 }
+          },
+          waterByDate: {},
+          weightLogs: [
+            { id: 'w_1', date: d3, weight: 82.60 },
+            { id: 'w_2', date: d2, weight: 82.30 },
+            { id: 'w_3', date: TODAY_KEY, weight: startW }
+          ],
+          workouts: [
+            {
+              id: 'wo_demo_1',
+              date: addDays(TODAY_KEY, -3),
+              title: 'Trening Siłowy A',
+              exercises: [
+                { name: 'Wyciskanie sztangi na ławce płaskiej', sets: [{ weight: 80, reps: 8 }, { weight: 82.5, reps: 7 }, { weight: 82.5, reps: 6 }] },
+                { name: 'Wiosłowanie sztangą w opadzie', sets: [{ weight: 70, reps: 10 }, { weight: 75, reps: 8 }, { weight: 75, reps: 8 }] }
+              ]
+            }
+          ],
+          journalEntries: [
+            {
+              id: 'jr_demo_1',
+              date: TODAY_KEY,
+              time: '21:15',
+              mood: 4,
+              place: 'Dom',
+              note: 'Spokojny wieczór, plan ułożony na jutro.'
+            }
+          ],
+          aiMessages: [
+            {
+              role: 'assistant',
+              text: 'Cześć! Wpisz co zrobiłeś, zjadłeś lub podniosłeś na treningu (np. "wypiłem 500 ml wody i wziąłem kreatynę" albo "Wyciskanie na ławce: 85kg x 8, 85kg x 7").',
+              applied: []
+            }
+          ]
+        };
+      }
+
+      function loadState() {
+        const base = getDefaultData();
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return base;
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== 'object') return base;
+          return {
+            ...base,
+            ...parsed,
+            profile: { ...base.profile, ...(parsed.profile || {}) },
+            habits: Array.isArray(parsed.habits) && parsed.habits.length ? parsed.habits : base.habits,
+            recurringRules: Array.isArray(parsed.recurringRules) && parsed.recurringRules.length ? parsed.recurringRules : base.recurringRules,
+            events: Array.isArray(parsed.events) ? parsed.events : base.events,
+            weightLogs: Array.isArray(parsed.weightLogs) && parsed.weightLogs.length ? parsed.weightLogs : base.weightLogs,
+            workouts: Array.isArray(parsed.workouts) ? parsed.workouts : base.workouts,
+            journalEntries: Array.isArray(parsed.journalEntries) ? parsed.journalEntries : base.journalEntries,
+            aiMessages: Array.isArray(parsed.aiMessages) && parsed.aiMessages.length ? parsed.aiMessages : base.aiMessages
+          };
+        } catch (_) {
+          return base;
+        }
+      }
+
+      let state = loadState();
+      function saveState() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
+      }
+
+      const ui = {
+        activeTab: 'today',
+        selectedDate: TODAY_KEY,
+        calMonthOffset: 0,
+        aiOpen: false,
+        aiDraft: '',
+        onboardingStep: 0,
+        showHabitEditor: false,
+        showRuleModal: false,
+        showSettingsModal: false,
+        showEveningModal: false,
+        tempProfile: { ...state.profile }
+      };
+
+      function applyTheme() {
+        const th = ACCENT_THEMES.find(t => t.id === state.profile.accentTheme) || ACCENT_THEMES[0];
+        const r = document.documentElement.style;
+        r.setProperty('--accent-1', th.c1);
+        r.setProperty('--accent-2', th.c2);
+        r.setProperty('--accent-rgb', th.rgb1);
+        r.setProperty('--accent2-rgb', th.rgb2);
+
+        document.body.classList.remove('theme-light', 'theme-oled');
+        if (state.profile.bgMode === 'light') {
+          document.body.classList.add('theme-light');
+          document.documentElement.classList.remove('dark');
+        } else {
+          document.documentElement.classList.add('dark');
+          if (state.profile.bgMode === 'oled') document.body.classList.add('theme-oled');
+        }
+      }
+
+      function getRuleStatus(rule, dateKey) {
+        if (rule.type === 'every_n_days') {
+          const interval = Math.max(1, Number(rule.intervalDays) || 3);
+          const diff = daysBetween(rule.anchorDate || TODAY_KEY, dateKey);
+          const mod = ((diff % interval) + interval) % interval;
+          const isDue = mod === 0;
+          const daysUntil = isDue ? 0 : (interval - mod);
+          return { isDue, daysUntil, label: isDue ? 'Dzisiaj wypada!' : (daysUntil === 1 ? 'Za 1 dzień' : 'Za ' + daysUntil + ' dni') };
+        }
+        const targetDay = Math.min(28, Math.max(1, Number(rule.dayOfMonth) || 14));
+        const d = parseDateKey(dateKey);
+        const curDay = d.getDate();
+        const isDue = curDay === targetDay;
+        let daysUntil = 0;
+        if (!isDue) {
+          if (curDay < targetDay) daysUntil = targetDay - curDay;
+          else daysUntil = daysBetween(dateKey, toDateKey(new Date(d.getFullYear(), d.getMonth() + 1, targetDay)));
+        }
+        return { isDue, daysUntil, label: isDue ? 'Dzisiaj (' + targetDay + '. dzień miesiąca)' : targetDay + '. dnia miesiąca (za ' + daysUntil + ' dni)' };
+      }
+
+      function isTrainingDay(dateKey) {
+        if ((state.workouts || []).some(w => w.date === dateKey)) return true;
+        const gymRule = (state.recurringRules || []).find(r => r.isGymRule || r.title.toLowerCase().indexOf('siłown') !== -1);
+        return Boolean(gymRule && getRuleStatus(gymRule, dateKey).isDue);
+      }
+
+      function getEffectiveWaterGoal(dateKey) {
+        const base = Number(state.profile.waterGoalMl) || 3000;
+        const bonus = Number(state.profile.trainingWaterBonusMl) || 500;
+        return isTrainingDay(dateKey) ? base + bonus : base;
+      }
+
+      function getWaterTotal(dateKey) {
+        return (state.waterByDate[dateKey] || []).reduce((sum, item) => sum + (Number(item.ml) || 0), 0);
+      }
+
+      function addWater(dateKey, ml, source) {
+        const amount = Math.round(Number(ml) || 0);
+        if (amount <= 0) return;
+        if (!state.waterByDate[dateKey]) state.waterByDate[dateKey] = [];
+        const now = new Date();
+        state.waterByDate[dateKey].push({
+          id: 'wtr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          ml: amount,
+          time: pad2(now.getHours()) + ':' + pad2(now.getMinutes()),
+          source: source || 'Wpis'
+        });
+        const waterHabit = state.habits.find(h => h.id === 'h_water' || h.title.toLowerCase().indexOf('woda') !== -1);
+        if (waterHabit && getWaterTotal(dateKey) >= getEffectiveWaterGoal(dateKey)) {
+          if (!state.habitCompletions[dateKey]) state.habitCompletions[dateKey] = {};
+          state.habitCompletions[dateKey][waterHabit.id] = true;
+        }
+        saveState();
+      }
+
+      function getCaloriesSummary(dateKey) {
+        return (state.caloriesByDate[dateKey] || []).reduce((acc, it) => {
+          acc.kcal += Number(it.kcal) || 0;
+          acc.protein += Number(it.protein) || 0;
+          acc.carbs += Number(it.carbs) || 0;
+          acc.fat += Number(it.fat) || 0;
+          return acc;
+        }, { kcal: 0, protein: 0, carbs: 0, fat: 0 });
+      }
+
+      function addMeal(dateKey, name, kcal, protein, carbs, fat) {
+        if (!state.caloriesByDate[dateKey]) state.caloriesByDate[dateKey] = [];
+        state.caloriesByDate[dateKey].push({
+          id: 'meal_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          name: (name || 'Posiłek').trim(),
+          kcal: Math.max(0, Math.round(Number(kcal) || 0)),
+          protein: Math.max(0, Math.round(Number(protein) || 0)),
+          carbs: Math.max(0, Math.round(Number(carbs) || 0)),
+          fat: Math.max(0, Math.round(Number(fat) || 0))
+        });
+        saveState();
+      }
+
+      function addWeight(dateKey, weightVal) {
+        const w = parseWeightInput(weightVal);
+        if (w <= 0) return;
+        state.profile.currentWeight = w;
+        if (!state.profile.startWeight || state.profile.startWeight <= 0) state.profile.startWeight = w;
+        const idx = state.weightLogs.findIndex(x => x.date === dateKey);
+        if (idx >= 0) state.weightLogs[idx].weight = w;
+        else state.weightLogs.push({ id: 'w_' + Date.now(), date: dateKey, weight: w });
+        state.weightLogs.sort((a, b) => a.date.localeCompare(b.date));
+        saveState();
+      }
+
+      function calculateTargets(profile) {
+        const weight = parseWeightInput(profile.currentWeight) || 80;
+        const height = Number(profile.heightCm) || 180;
+        const age = Number(profile.age) || 22;
+        const bmr = Math.round(10 * weight + 6.25 * height - 5 * age + (profile.gender === 'female' ? -161 : 5));
+        const tdee = Math.round(bmr * 1.5);
+        let calorieGoal = tdee;
+        if (profile.goalType === 'cut') calorieGoal = tdee - 350;
+        if (profile.goalType === 'bulk') calorieGoal = tdee + 300;
+        calorieGoal = Math.max(1400, Math.round(calorieGoal / 25) * 25);
+        const proteinGoal = Math.round(weight * (profile.goalType === 'cut' ? 2.1 : 1.9));
+        const fatGoal = Math.round(weight * 0.85);
+        const carbsGoal = Math.round(Math.max(200, calorieGoal - (proteinGoal * 4 + fatGoal * 9)) / 4);
+        const waterGoalMl = Math.max(2000, Math.round((weight * 35) / 250) * 250);
+        return { bmr, tdee, calorieGoal, proteinGoal, carbsGoal, fatGoal, waterGoalMl };
+      }
+
+      function estimate1RM(weight, reps) {
+        const w = Number(weight) || 0;
+        const r = Number(reps) || 0;
+        if (w <= 0 || r <= 0) return 0;
+        return r === 1 ? Number(w.toFixed(1)) : Number((w * (1 + r / 30)).toFixed(1));
+      }
+
+      function parseWorkoutText(rawText) {
+        const lines = String(rawText || '').split(/\n|;/).map(l => l.trim()).filter(Boolean);
+        const exercises = [];
+
+        for (const line of lines) {
+          const clean = line.replace(/^(trening|siłownia|silownia)\s*[:\-]\s*/i, '').trim();
+          const colonIdx = clean.indexOf(':');
+          if (colonIdx === -1) continue;
+          const exName = clean.slice(0, colonIdx).trim();
+          const setsStr = clean.slice(colonIdx + 1).trim();
+          if (!exName || !setsStr) continue;
+
+          const sets = [];
+          const parts = setsStr.split(',');
+          for (const part of parts) {
+            const m = part.trim().match(/(\d+(?:[.,]\d+)?)\s*(?:kg)?\s*[x×*]\s*(\d+)/i);
+            if (m) {
+              sets.push({
+                weight: parseFloat(m[1].replace(',', '.')),
+                reps: Number(m[2])
+              });
+            }
+          }
+          if (sets.length) exercises.push({ name: exName, sets });
+        }
+        return exercises;
+      }
+
+      function getExerciseAnalytics() {
+        const sorted = [...(state.workouts || [])].sort((a, b) => a.date.localeCompare(b.date));
+        const map = {};
+
+        for (const wo of sorted) {
+          for (const ex of (wo.exercises || [])) {
+            const key = String(ex.name || '').trim().toLowerCase();
+            if (!key) continue;
+            if (!map[key]) {
+              map[key] = { name: ex.name.trim(), bestWeight: 0, bestWeightReps: 0, bestWeightDate: '', best1RM: 0, best1RMDate: '', sessions: [] };
+            }
+            const item = map[key];
+            let sMaxW = 0, sMaxR = 0, sBest1RM = 0;
+            for (const s of (ex.sets || [])) {
+              const w = Number(s.weight) || 0;
+              const r = Number(s.reps) || 0;
+              const e1 = estimate1RM(w, r);
+              if (e1 > sBest1RM) sBest1RM = e1;
+              if (w > sMaxW || (w === sMaxW && r > sMaxR)) { sMaxW = w; sMaxR = r; }
+            }
+            if (sBest1RM > item.best1RM) { item.best1RM = sBest1RM; item.best1RMDate = wo.date; }
+            if (sMaxW > item.bestWeight || (sMaxW === item.bestWeight && sMaxR > item.bestWeightReps)) {
+              item.bestWeight = sMaxW;
+              item.bestWeightReps = sMaxR;
+              item.bestWeightDate = wo.date;
+            }
+            item.sessions.push({ date: wo.date, sets: ex.sets || [], best1RM: sBest1RM });
+          }
+        }
+
+        const lastSleep = state.sleepByDate[TODAY_KEY] || state.sleepByDate[addDays(TODAY_KEY, -1)];
+        const lowRec = lastSleep && (Number(lastSleep.hours) < 6.2 || Number(lastSleep.energy) <= 2);
+
+        return Object.values(map).map(entry => {
+          const last = entry.sessions[entry.sessions.length - 1];
+          const topSet = last.sets.reduce((b, c) => (Number(c.weight) >= Number(b.weight) ? c : b), last.sets[0]);
+          const minReps = Math.min(...last.sets.map(s => Number(s.reps) || 0));
+          const maxReps = Math.max(...last.sets.map(s => Number(s.reps) || 0));
+          const step = Number(topSet.weight) >= 40 ? 2.5 : 1.25;
+          let nextPlan = '';
+          if (lowRec) {
+            nextPlan = 'Słabsza regeneracja (sen/energia): utrzymaj ' + topSet.weight + ' kg × ' + minReps + '–' + maxReps + ' powt.';
+          } else if (minReps >= 8) {
+            nextPlan = 'Progresja ciężaru: wejdź na ' + (Number(topSet.weight) + step).toFixed(2).replace(/\.00$/, '') + ' kg (3 × 6–8 powt.).';
+          } else {
+            nextPlan = 'Podwójna progresja: zostaw ' + topSet.weight + ' kg i celuj w ' + Math.min(10, maxReps + 1) + ' powt.';
+          }
+          return {
+            ...entry,
+            isRecentPR: entry.best1RMDate && daysBetween(entry.best1RMDate, TODAY_KEY) <= 4,
+            nextPlan
+          };
+        });
+      }
+
+      function processAiInput(raw) {
+        const text = String(raw || '').trim();
+        if (!text) return;
+        state.aiMessages.push({ role: 'user', text: text, applied: [] });
+        ui.aiDraft = '';
+
+        const lower = text.toLowerCase();
+        const applied = [];
+        let targetDate = TODAY_KEY;
+        if (lower.indexOf('jutro') !== -1) targetDate = addDays(TODAY_KEY, 1);
+        else if (lower.indexOf('wczoraj') !== -1) targetDate = addDays(TODAY_KEY, -1);
+
+        const exs = parseWorkoutText(text);
+        if (exs.length) {
+          state.workouts.push({ id: 'wo_' + Date.now(), date: targetDate, title: 'Trening siłowy', exercises: exs });
+          applied.push('Zapisano trening: ' + exs.map(e => e.name).join(', '));
+          state.aiMessages.push({ role: 'assistant', text: 'Zapisałem trening i zaktualizowałem rekordy w zakładce Siłownia & Progres!', applied });
+          saveState();
+          render();
+          return;
+        }
+
+        const segments = text
+          .split(/(?:\s+i\s+|\s+oraz\s+(?:że\s+)?|,\s*|\s+że\s+)/i)
+          .map(s => s.trim())
+          .filter(Boolean);
+
+        for (const seg of segments) {
+          const sLow = seg.toLowerCase();
+          let segDate = targetDate;
+          if (sLow.indexOf('jutro') !== -1) segDate = addDays(TODAY_KEY, 1);
+          else if (sLow.indexOf('wczoraj') !== -1) segDate = addDays(TODAY_KEY, -1);
+
+          const sMl = sLow.match(/(\d{2,4})\s*ml/);
+          const sL = sLow.match(/(\d+(?:[.,]\d+)?)\s*(?:l|litr)/);
+          if (sMl) {
+            addWater(segDate, Number(sMl[1]), 'Asystent AI');
+            applied.push('+' + sMl[1] + ' ml wody (' + formatShortDate(segDate) + ')');
+            continue;
+          }
+          if (sL) {
+            const mlVal = Math.round(parseFloat(sL[1].replace(',', '.')) * 1000);
+            addWater(segDate, mlVal, 'Asystent AI');
+            applied.push('+' + mlVal + ' ml wody (' + formatShortDate(segDate) + ')');
+            continue;
+          }
+
+          const sW = sLow.match(/(?:waż[ęe]|waze|waga)\s*(\d{2,3}(?:[.,]\d{1,2})?)/);
+          if (sW) {
+            const wVal = parseWeightInput(sW[1]);
+            addWeight(segDate, wVal);
+            applied.push('Waga: ' + formatWeight(wVal));
+            continue;
+          }
+
+          const sSl = sLow.match(/(\d+(?:[.,]\d+)?)\s*(?:h|godz)/);
+          if (sSl) {
+            const hVal = parseFloat(sSl[1].replace(',', '.'));
+            state.sleepByDate[segDate] = { hours: hVal, quality: 'Dobry', energy: 4 };
+            applied.push('Sen: ' + hVal + 'h');
+            continue;
+          }
+
+          const sKcal = sLow.match(/(\d{2,4})\s*kcal/);
+          if (sKcal || sLow.indexOf('zjad') !== -1 || sLow.indexOf('ryż') !== -1 || sLow.indexOf('ryz') !== -1 || sLow.indexOf('kurczak') !== -1) {
+            const pM = sLow.match(/(\d{1,3})\s*g?\s*białk/);
+            const cM = sLow.match(/(\d{1,3})\s*g?\s*węgl/);
+            const fM = sLow.match(/(\d{1,3})\s*g?\s*tłuszcz/);
+            const kcalVal = sKcal ? Number(sKcal[1]) : 550;
+            const protVal = pM ? Number(pM[1]) : 42;
+            const carbVal = cM ? Number(cM[1]) : 65;
+            const fatVal = fM ? Number(fM[1]) : 10;
+            const cleanMeal = seg.replace(/^(dzisiaj|wczoraj|jutro|i|oraz|zjadłem|zjadlem|zjadłam|zjadlam)\s+/i, '').trim() || 'Posiłek';
+            addMeal(segDate, cleanMeal.slice(0, 45), kcalVal, protVal, carbVal, fatVal);
+            applied.push('Posiłek (' + formatShortDate(segDate) + '): ' + kcalVal + ' kcal');
+            continue;
+          }
+
+          if (sLow.indexOf('kreatyn') !== -1) {
+            if (!state.habitCompletions[segDate]) state.habitCompletions[segDate] = {};
+            state.habitCompletions[segDate]['h_creatine'] = true;
+            applied.push('Zaliczono nawyk: Kreatyna');
+            continue;
+          }
+
+          const cleanTask = seg
+            .replace(/^(dzisiaj|wczoraj|jutro|muszę|musze|trzeba|zrobić|zrobic|kupić|kupic|że|i|oraz)\s+/gi, '')
+            .replace(/^(muszę|musze)\s+/i, '')
+            .trim();
+          const finalTask = (/^(kup|zrób|zrob|weź|wez|idź|idz|sprawdź|sprawdz)/i.test(cleanTask) ? cleanTask : (sLow.indexOf('kup') !== -1 ? 'Kupić ' + cleanTask : cleanTask));
+          if (finalTask) {
+            if (!state.tasksByDate[segDate]) state.tasksByDate[segDate] = [];
+            state.tasksByDate[segDate].push({ id: 'tsk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5), title: finalTask.charAt(0).toUpperCase() + finalTask.slice(1), done: false });
+            applied.push('Zadanie (' + formatShortDate(segDate) + '): ' + finalTask.charAt(0).toUpperCase() + finalTask.slice(1));
+          }
+        }
+
+        state.aiMessages.push({ role: 'assistant', text: 'Gotowe — zaktualizowałem Twój planer YouVsYou!', applied });
+        saveState();
+        render();
+      }
+
+      function buildPersonalizedPlan(gender, goalType, focusAreas) {
+        const isFemale = gender === 'female';
+        const foci = Array.isArray(focusAreas) && focusAreas.length ? focusAreas : ['mental', 'discipline'];
+        const hasDiscipline = foci.indexOf('discipline') !== -1;
+        const hasMental = foci.indexOf('mental') !== -1;
+        const hasBody = foci.indexOf('body') !== -1;
+
+        const habits = [
+          { id: 'h_water', title: 'Woda (cel dzienny)', icon: '💧' }
+        ];
+        const starterTasks = [];
+        const suggestedRules = [];
+
+        if (hasMental) {
+          habits.push({ id: 'h_evening_prayer', title: 'Modlitwa / wyciszenie wieczorem', icon: '🕊️' });
+          habits.push({ id: 'h_mental_checkin', title: 'Wpis w Journalu i ocena samopoczucia', icon: '🧠' });
+          starterTasks.push({ id: 't_mental_1', title: 'Wieczorna modlitwa lub 5 min ciszy i zapisanie samopoczucia', done: false });
+        }
+
+        if (hasDiscipline) {
+          habits.push({ id: 'h_creatine', title: 'Kreatyna codziennie', icon: '⚡' });
+          habits.push({ id: 'h_rhythm', title: 'Trzymać ustalony plan dnia', icon: '🎯' });
+          if (hasBody) {
+            suggestedRules.push({
+              id: 'r_gym_2d',
+              title: 'Siłownia',
+              icon: '🏋️',
+              type: 'every_n_days',
+              intervalDays: 2,
+              anchorDate: TODAY_KEY,
+              isGymRule: true
+            });
+            starterTasks.push({ id: 't_disc_1', title: 'Zrealizować zaplanowany trening na siłowni', done: false });
+          } else {
+            starterTasks.push({ id: 't_disc_1', title: 'Domknąć 3 najważniejsze zadania dnia bez odkładania', done: false });
+          }
+        }
+
+        if (hasBody) {
+          if (goalType === 'cut') {
+            habits.push({ id: 'h_steps', title: isFemale ? 'Spacer / 8 000 kroków' : 'Spacer / 10 000 kroków', icon: '🚶' });
+            habits.push({ id: 'h_protein_goal', title: 'Domknąć białko w diecie', icon: '🥗' });
+            starterTasks.push({ id: 't_cut_1', title: 'Dopilnować posiłków pod deficyt kaloryczny', done: false });
+          } else if (goalType === 'bulk') {
+            if (!hasDiscipline) habits.push({ id: 'h_creatine', title: 'Kreatyna codziennie', icon: '⚡' });
+            habits.push({ id: 'h_surplus_meals', title: 'Zjeść pełne posiłki (nadwyżka)', icon: '🍚' });
+            starterTasks.push({ id: 't_bulk_1', title: 'Przygotować posiłek potreningowy', done: false });
+          } else {
+            if (!hasDiscipline) habits.push({ id: 'h_creatine', title: 'Kreatyna codziennie', icon: '⚡' });
+            habits.push({ id: 'h_mobility', title: isFemale ? 'Rozciąganie / mobilność' : 'Rozgrzewka i mobilność', icon: '🧘' });
+            starterTasks.push({ id: 't_recomp_1', title: 'Zaplanować treningi i posiłki na ten tydzień', done: false });
+          }
+        }
+
+        if (isFemale && hasMental) {
+          habits.push({ id: 'h_skincare', title: 'Wieczorna rutyna i odpoczynek', icon: '✨' });
+        }
+
+        const enabledModules = {
+          gym: hasBody,
+          calories: hasBody,
+          journal: hasMental || !hasBody,
+          sleep: true,
+          water: true,
+          weight: hasBody,
+          calendar: true
+        };
+
+        const focusLabels = [];
+        if (hasMental) focusLabels.push('Mental i spokój');
+        if (hasDiscipline) focusLabels.push('Samodyscyplina');
+        if (hasBody) focusLabels.push('Sylwetka i forma');
+
+        return {
+          habits,
+          starterTasks,
+          suggestedRules,
+          enabledModules,
+          focusSummary: focusLabels.join(' • '),
+          greeting: 'Twój panel został dopasowany pod: ' + focusLabels.join(', ') + '.'
+        };
+      }
+
+      function renderOnboarding() {
+        const p = ui.tempProfile;
+        if (!Array.isArray(p.focusAreas) || !p.focusAreas.length) p.focusAreas = ['mental', 'discipline', 'body'];
+        const hasBody = p.focusAreas.indexOf('body') !== -1;
+
+        const steps = [
+          { id: 'name', title: 'Jak mamy się do Ciebie zwracać?' },
+          { id: 'gender', title: 'Wybierz płeć' },
+          { id: 'focus', title: 'Na czym najbardziej chcesz się skupić?' },
+          { id: 'modules', title: 'Które moduły mają być aktywne?' }
+        ];
+        if (hasBody) {
+          steps.push({ id: 'body_stats', title: 'Wiek i wzrost' });
+          steps.push({ id: 'weights', title: 'Waga obecna i docelowa' });
+          steps.push({ id: 'goal', title: 'Twój główny cel sylwetkowy' });
+        }
+        steps.push({ id: 'summary', title: 'Podsumowanie i proponowany plan' });
+
+        if (ui.onboardingStep >= steps.length) ui.onboardingStep = steps.length - 1;
+        const stepObj = steps[ui.onboardingStep];
+        const total = steps.length;
+        const pct = Math.round(((ui.onboardingStep + 1) / total) * 100);
+        const calc = calculateTargets({ ...p, currentWeight: p.startWeight });
+        const planPreview = buildPersonalizedPlan(p.gender || 'male', p.goalType || 'recomp', p.focusAreas);
+        if (!p.enabledModules) p.enabledModules = { ...planPreview.enabledModules };
+
+        let body = '';
+        if (stepObj.id === 'name') {
+          body = '<h1 class="text-3xl font-extrabold text-white mb-2">Jak mamy się do Ciebie zwracać?</h1><p class="text-sm text-slate-400 mb-6">Witaj w YouVsYou — aplikacji dopasowanej do Twojego stylu życia.</p><input id="ob-input" type="text" value="' + escapeAttr(p.name) + '" class="w-full px-5 py-4 rounded-2xl bg-slate-900 border border-white/15 text-xl font-bold text-white" />';
+        } else if (stepObj.id === 'gender') {
+          const gOpts = [
+            { id: 'female', label: '♀️ Kobieta' },
+            { id: 'male', label: '♂️ Mężczyzna' }
+          ];
+          body = '<h1 class="text-3xl font-extrabold text-white mb-2">Wybierz płeć</h1><p class="text-xs text-slate-400 mb-6">Dobierzemy odpowiednie przeliczniki oraz propozycje codziennych nawyków.</p><div class="grid grid-cols-2 gap-3">' + gOpts.map(g => '<button type="button" data-ob-gender="' + g.id + '" class="p-4 rounded-2xl border text-center font-bold ' + (p.gender === g.id ? 'accent-badge' : 'bg-slate-900 border-white/10 text-slate-300') + '">' + g.label + '</button>').join('') + '</div>';
+        } else if (stepObj.id === 'focus') {
+          const fOpts = [
+            { id: 'mental', title: '🕊️ Mental, spokój i samopoczucie', desc: 'Journal, miejsce wpisu, statystyki nastroju, modlitwa wieczorem i wyciszenie.' },
+            { id: 'discipline', title: '⚡ Samodyscyplina i konsekwencja', desc: 'Codzienna rutyna, kreatyna, konsekwencja w zadaniach i cykliczne nawyki.' },
+            { id: 'body', title: '💪 Sylwetka, siłownia i dieta', desc: 'Tracker siłowni, rekordy PR, kalorie, makro i kontrola wagi.' }
+          ];
+          body = '<h1 class="text-2xl sm:text-3xl font-extrabold text-white mb-2">Na czym chcesz się skupić?</h1><p class="text-xs text-slate-400 mb-5">Możesz wybrać jedną opcję lub połączyć kilka — jeśli nie wybierzesz sylwetki, nie będziemy Cię męczyć siłownią i makro.</p><div class="space-y-2.5">' + fOpts.map(f => {
+            const active = p.focusAreas.indexOf(f.id) !== -1;
+            return '<button type="button" data-ob-focus="' + f.id + '" class="w-full p-4 rounded-2xl border text-left transition ' + (active ? 'accent-badge' : 'bg-slate-900 border-white/10 text-slate-300') + '">' +
+              '<div class="font-bold text-sm">' + (active ? '✓ ' : '') + f.title + '</div>' +
+              '<div class="text-xs opacity-80 mt-0.5">' + f.desc + '</div>' +
+            '</button>';
+          }).join('') + '</div>';
+        } else if (stepObj.id === 'modules') {
+          const modList = [
+            { key: 'journal', label: '🧠 Journal & Samopoczucie (notatki, miejsce, statystyki nastroju)' },
+            { key: 'gym', label: '🏋️ Siłownia & Progres (treningi, rekordy PR, ciężary)' },
+            { key: 'calories', label: '🍽️ Kalorie & Makro (posiłki, B/W/T)' },
+            { key: 'weight', label: '⚖️ Waga & Cel sylwetkowy' },
+            { key: 'sleep', label: '💤 Sen & Energia' },
+            { key: 'water', label: '💧 Nawodnienie (Woda)' }
+          ];
+          body = '<h1 class="text-2xl sm:text-3xl font-extrabold text-white mb-2">Dopasuj widoczne moduły</h1><p class="text-xs text-slate-400 mb-4">Zostaw tylko to, z czego realnie chcesz korzystać (później zmienisz to w ustawieniach).</p><div class="space-y-2">' + modList.map(m => {
+            const on = Boolean(p.enabledModules[m.key]);
+            return '<button type="button" data-ob-mod="' + m.key + '" class="w-full p-3.5 rounded-xl border text-left text-xs font-bold flex items-center justify-between ' + (on ? 'accent-badge' : 'bg-slate-900 border-white/10 text-slate-400') + '">' +
+              '<span>' + m.label + '</span><span>' + (on ? 'WŁĄCZONE ✓' : 'UKRYTE') + '</span>' +
+            '</button>';
+          }).join('') + '</div>';
+        } else if (stepObj.id === 'body_stats') {
+          body = '<h1 class="text-3xl font-extrabold text-white mb-6">Wiek i wzrost</h1><div class="grid grid-cols-2 gap-4"><div><label class="block text-xs text-slate-400 mb-1">Wiek (lat)</label><input id="ob-age" type="number" value="' + p.age + '" class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-white/15 text-xl font-bold text-white" /></div><div><label class="block text-xs text-slate-400 mb-1">Wzrost (cm)</label><input id="ob-height" type="number" value="' + p.heightCm + '" class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-white/15 text-xl font-bold text-white" /></div></div>';
+        } else if (stepObj.id === 'weights') {
+          body = '<h1 class="text-3xl font-extrabold text-white mb-2">Waga obecna i docelowa</h1><p class="text-xs text-slate-400 mb-5">Z dokładnością do dwóch miejsc po przecinku (np. 65.00 lub 82.00).</p><div class="grid grid-cols-2 gap-4"><div><label class="block text-xs text-slate-400 mb-1">Obecna (kg)</label><input id="ob-sw" type="text" value="' + parseWeightInput(p.startWeight).toFixed(2) + '" class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-white/15 text-xl font-bold text-white" /></div><div><label class="block text-xs text-slate-400 mb-1">Docelowa (kg)</label><input id="ob-gw" type="text" value="' + parseWeightInput(p.goalWeight).toFixed(2) + '" class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-white/15 text-xl font-bold text-white" /></div></div>';
+        } else if (stepObj.id === 'goal') {
+          const opts = [
+            { id: 'cut', label: '🔥 Redukcja / Spadek wagi' },
+            { id: 'recomp', label: '⚔️ Rekompozycja / Forma i siła' },
+            { id: 'bulk', label: '💪 Masa mięśniowa' }
+          ];
+          body = '<h1 class="text-3xl font-extrabold text-white mb-6">Twój główny cel sylwetkowy</h1><div class="space-y-3">' + opts.map(o => '<button type="button" data-ob-goal="' + o.id + '" class="w-full p-4 rounded-2xl border text-left font-bold ' + (p.goalType === o.id ? 'accent-badge' : 'bg-slate-900 border-white/10 text-slate-300') + '">' + o.label + '</button>').join('') + '</div>';
+        } else {
+          body = '<h1 class="text-2xl sm:text-3xl font-extrabold text-white mb-2">Gotowy zestaw na start</h1><p class="text-xs text-slate-400 mb-4">' + escapeHtml(planPreview.greeting) + '</p>' +
+            (hasBody ? '<div class="grid grid-cols-2 gap-4 mb-4"><div><label class="block text-xs text-slate-400 mb-1">Kalorie (kcal)</label><input id="ob-kcal" type="number" value="' + calc.calorieGoal + '" class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-white/15 text-xl font-bold accent-text" /></div><div><label class="block text-xs text-slate-400 mb-1">Woda bazowa (ml)</label><input id="ob-water" type="number" value="' + calc.waterGoalMl + '" class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-white/15 text-xl font-bold text-cyan-300" /></div></div>' : '<div class="mb-4"><label class="block text-xs text-slate-400 mb-1">Dzienny cel wody (ml)</label><input id="ob-water" type="number" value="' + (p.waterGoalMl || 2500) + '" class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-white/15 text-xl font-bold text-cyan-300" /></div>') +
+            '<div class="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 text-xs text-slate-300 space-y-2">' +
+              '<div><div class="font-bold text-white mb-1">Proponowane nawyki:</div>' + planPreview.habits.map(h => '<div>' + h.icon + ' ' + escapeHtml(h.title) + '</div>').join('') + '</div>' +
+              '<div><div class="font-bold text-white mb-1">Proponowane zadania na dziś:</div>' + planPreview.starterTasks.map(t => '<div>• ' + escapeHtml(t.title) + '</div>').join('') + '</div>' +
+            '</div>';
+        }
+
+        document.getElementById('app').innerHTML =
+          '<div class="min-h-screen flex flex-col justify-between px-4 py-6 max-w-xl mx-auto">' +
+            '<div><div class="flex justify-between items-center mb-3"><span class="font-extrabold text-white">YouVsYou • Krok ' + (ui.onboardingStep + 1) + '/' + total + '</span><button id="ob-skip" class="text-xs text-slate-400 hover:text-white">Pomiń →</button></div><div class="w-full h-2 rounded-full bg-white/10"><div class="h-full accent-bar rounded-full" style="width:' + pct + '%"></div></div></div>' +
+            '<div class="glass-card rounded-3xl p-6 sm:p-8 my-6">' + body + '</div>' +
+            '<div class="flex justify-between"><button id="ob-prev" ' + (ui.onboardingStep === 0 ? 'disabled' : '') + ' class="px-5 py-3 rounded-xl border border-white/10 text-sm text-slate-300 disabled:opacity-30">← Wstecz</button><button id="ob-next" class="px-7 py-3 rounded-xl accent-btn font-bold text-sm">' + (ui.onboardingStep === total - 1 ? 'Uruchom YouVsYou ✓' : 'Dalej →') + '</button></div>' +
+          '</div>';
+
+        const sync = () => {
+          if (stepObj.id === 'name') p.name = document.getElementById('ob-input')?.value || p.name;
+          if (stepObj.id === 'body_stats') {
+            p.age = Number(document.getElementById('ob-age')?.value) || 22;
+            p.heightCm = Number(document.getElementById('ob-height')?.value) || 180;
+          }
+          if (stepObj.id === 'weights') {
+            p.startWeight = parseWeightInput(document.getElementById('ob-sw')?.value);
+            p.goalWeight = parseWeightInput(document.getElementById('ob-gw')?.value);
+          }
+          if (stepObj.id === 'summary') {
+            if (document.getElementById('ob-kcal')) p.calorieGoal = Number(document.getElementById('ob-kcal').value) || calc.calorieGoal;
+            if (document.getElementById('ob-water')) p.waterGoalMl = Number(document.getElementById('ob-water').value) || calc.waterGoalMl;
+          }
+        };
+
+        const finish = () => {
+          sync();
+          const sw = parseWeightInput(p.startWeight) || (p.gender === 'female' ? 62.00 : 82.00);
+          const gw = parseWeightInput(p.goalWeight) || sw;
+          const gen = p.gender === 'female' ? 'female' : 'male';
+          const goal = p.goalType || 'recomp';
+          const foci = Array.isArray(p.focusAreas) && p.focusAreas.length ? p.focusAreas : ['mental', 'discipline'];
+          const c = calculateTargets({ ...p, gender: gen, goalType: goal, currentWeight: sw });
+          const plan = buildPersonalizedPlan(gen, goal, foci);
+          const mods = p.enabledModules || plan.enabledModules;
+
+          state.profile = {
+            ...state.profile,
+            name: (p.name || (gen === 'female' ? 'Zawodniczka' : 'Zawodnik')).trim(),
+            gender: gen,
+            focusAreas: foci,
+            enabledModules: mods,
+            age: p.age,
+            heightCm: p.heightCm,
+            startWeight: sw,
+            currentWeight: sw,
+            goalWeight: gw,
+            goalType: goal,
+            calorieGoal: p.calorieGoal || c.calorieGoal,
+            proteinGoal: c.proteinGoal,
+            carbsGoal: c.carbsGoal,
+            fatGoal: c.fatGoal,
+            waterGoalMl: p.waterGoalMl || c.waterGoalMl
+          };
+          state.habits = plan.habits;
+          state.tasksByDate[TODAY_KEY] = plan.starterTasks;
+          const nonGym = (state.recurringRules || []).filter(r => !r.isGymRule && r.id !== 'r_gym_3d' && r.id !== 'r_gym_2d');
+          state.recurringRules = [...(plan.suggestedRules || []), ...nonGym];
+          if (mods.weight) addWeight(TODAY_KEY, sw);
+          state.onboardingCompleted = true;
+          saveState();
+          render();
+        };
+
+        document.getElementById('ob-prev')?.addEventListener('click', () => { sync(); if (ui.onboardingStep > 0) { ui.onboardingStep--; render(); } });
+        document.getElementById('ob-next')?.addEventListener('click', () => { sync(); if (ui.onboardingStep < total - 1) { ui.onboardingStep++; render(); } else finish(); });
+        document.getElementById('ob-skip')?.addEventListener('click', finish);
+        document.querySelectorAll('[data-ob-gender]').forEach(b => b.addEventListener('click', () => { p.gender = b.getAttribute('data-ob-gender'); ui.onboardingStep++; render(); }));
+        document.querySelectorAll('[data-ob-focus]').forEach(b => b.addEventListener('click', () => {
+          const fId = b.getAttribute('data-ob-focus');
+          const cur = Array.isArray(p.focusAreas) ? [...p.focusAreas] : ['mental'];
+          const idx = cur.indexOf(fId);
+          if (idx >= 0) {
+            if (cur.length > 1) cur.splice(idx, 1);
+          } else {
+            cur.push(fId);
+          }
+          p.focusAreas = cur;
+          const nextPlan = buildPersonalizedPlan(p.gender || 'male', p.goalType || 'recomp', cur);
+          p.enabledModules = { ...nextPlan.enabledModules };
+          render();
+        }));
+        document.querySelectorAll('[data-ob-mod]').forEach(b => b.addEventListener('click', () => {
+          const k = b.getAttribute('data-ob-mod');
+          p.enabledModules[k] = !p.enabledModules[k];
+          render();
+        }));
+        document.querySelectorAll('[data-ob-goal]').forEach(b => b.addEventListener('click', () => { p.goalType = b.getAttribute('data-ob-goal'); ui.onboardingStep++; render(); }));
+      }
+
+      function render() {
+        applyTheme();
+        if (!state.onboardingCompleted) { renderOnboarding(); return; }
+
+        const dKey = ui.selectedDate;
+        const trainingToday = isTrainingDay(dKey);
+        const doneMap = state.habitCompletions[dKey] || {};
+        const tasks = state.tasksByDate[dKey] || [];
+        const waterTotal = getWaterTotal(dKey);
+        const waterGoal = getEffectiveWaterGoal(dKey);
+        const calSum = getCaloriesSummary(dKey);
+        const calGoal = Number(state.profile.calorieGoal) || 2450;
+        const userAv = USER_AVATARS.find(a => a.id === state.profile.userAvatar) || USER_AVATARS[0];
+
+        const mods = state.profile.enabledModules || { gym: true, calories: true, journal: true, sleep: true, water: true, weight: true, calendar: true };
+        const nav = [
+          { id: 'today', label: 'Dziś & Nawyki', icon: '⚡' },
+          ...(mods.journal !== false ? [{ id: 'journal', label: 'Journal & Mental', icon: '🧠' }] : []),
+          ...(mods.gym !== false ? [{ id: 'gym', label: 'Siłownia & Progres', icon: '🏋️' }] : []),
+          ...(mods.calendar !== false ? [{ id: 'calendar', label: 'Kalendarz', icon: '📅' }] : []),
+          ...(mods.calories !== false ? [{ id: 'calories', label: 'Kalorie & Makro', icon: '🍽️' }] : []),
+          ...(mods.sleep !== false ? [{ id: 'sleep', label: 'Sen & Energia', icon: '💤' }] : []),
+          ...(mods.water !== false ? [{ id: 'water', label: 'Woda', icon: '💧' }] : []),
+          ...(mods.weight !== false ? [{ id: 'weight', label: 'Waga & Cel', icon: '⚖️' }] : [])
+        ];
+
+        let contentHtml = '';
+
+        if (ui.activeTab === 'today') {
+          const doneCount = state.habits.filter(h => doneMap[h.id]).length + tasks.filter(t => t.done).length;
+          const totalCount = state.habits.length + tasks.length;
+          const pct = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;
+
+          contentHtml =
+            '<div class="space-y-6">' +
+              '<div class="glass-card rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">' +
+                '<div>' +
+                  '<div class="flex flex-wrap items-center gap-2 mb-1">' +
+                    '<span class="text-xs font-extrabold uppercase accent-text">YouVsYou</span>' +
+                    (trainingToday
+                      ? '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/35">🏋️ Dzień treningowy (+' + (state.profile.trainingWaterBonusMl || 500) + ' ml wody)</span>'
+                      : '<span class="px-2.5 py-0.5 rounded-full text-[11px] bg-white/5 text-slate-400 border border-white/10">🔋 Dzień nietreningowy</span>') +
+                  '</div>' +
+                  '<h2 class="text-xl sm:text-2xl font-extrabold text-white capitalize">' + formatPolishDate(dKey) + '</h2>' + ((state.tasksByDate[addDays(dKey, 1)] || []).length ? '<div class="text-xs text-indigo-300 mt-1">📌 Zadania na jutro (' + formatShortDate(addDays(dKey, 1)) + '): ' + (state.tasksByDate[addDays(dKey, 1)] || []).map(x => escapeHtml(x.title)).join(', ') + '</div>' : '') +
+                '</div>' +
+                '<div class="flex flex-wrap items-center gap-2">' +
+                  '<button id="btn-evening" class="px-3.5 py-2 rounded-xl bg-indigo-500/20 border border-indigo-400/35 text-indigo-200 text-xs font-bold">🌙 Podgląd wieczorny</button>' +
+                  '<button data-day="-1" class="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-sm">←</button>' +
+                  '<button data-day="today" class="px-3.5 py-2 rounded-xl accent-badge text-xs font-bold">Dzisiaj</button>' +
+                  '<button data-day="1" class="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-sm">→</button>' +
+                '</div>' +
+              '</div>' +
+
+              '<div class="grid grid-cols-1 md:grid-cols-4 gap-4">' +
+                '<div class="glass-card rounded-2xl p-4 md:col-span-2">' +
+                  '<div class="flex justify-between text-xs font-bold mb-2"><span class="text-slate-400">REALIZACJA DNIA</span><span class="accent-text">' + doneCount + '/' + totalCount + ' (' + pct + '%)</span></div>' +
+                  '<div class="w-full h-3 rounded-full bg-white/10 overflow-hidden"><div class="h-full accent-bar" style="width:' + pct + '%"></div></div>' +
+                '</div>' +
+                '<button data-tab="water" class="glass-card rounded-2xl p-4 text-left">' +
+                  '<div class="text-xs text-cyan-400 font-bold">💧 Woda</div>' +
+                  '<div class="text-xl font-extrabold text-white mt-1">' + waterTotal + ' <span class="text-xs font-normal text-slate-400">/ ' + waterGoal + ' ml</span></div>' +
+                '</button>' +
+                (mods.calories !== false
+                  ? '<button data-tab="calories" class="glass-card rounded-2xl p-4 text-left">' +
+                      '<div class="text-xs text-amber-400 font-bold">🍽️ Kalorie & Makro</div>' +
+                      '<div class="text-xl font-extrabold text-white mt-1">' + calSum.kcal + ' <span class="text-xs font-normal text-slate-400">/ ' + calGoal + '</span></div>' +
+                      '<div class="text-[11px] text-slate-400 mt-0.5">B:' + calSum.protein + 'g W:' + calSum.carbs + 'g T:' + calSum.fat + 'g</div>' +
+                    '</button>'
+                  : '<button data-tab="journal" class="glass-card rounded-2xl p-4 text-left">' +
+                      '<div class="text-xs text-indigo-300 font-bold">🧠 Journal & Mental</div>' +
+                      '<div class="text-xl font-extrabold text-white mt-1">' + ((state.journalEntries || []).length) + ' <span class="text-xs font-normal text-slate-400">wpisów</span></div>' +
+                      '<div class="text-[11px] text-slate-400 mt-0.5">Kliknij, aby zapisać myśli i nastrój</div>' +
+                    '</button>') +
+              '</div>' +
+
+              '<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">' +
+                '<div class="lg:col-span-7 space-y-6">' +
+                  '<div class="glass-card rounded-2xl p-5">' +
+                    '<div class="flex justify-between items-center mb-4"><h3 class="font-bold text-white">Codzienne nawyki</h3><button id="btn-habit-edit" class="px-3 py-1 rounded-xl text-xs font-bold accent-badge">' + (ui.showHabitEditor ? 'Gotowe' : '+ Dodaj / Edytuj') + '</button></div>' +
+                    (ui.showHabitEditor ? '<div class="flex gap-2 mb-4"><input id="new-habit-icon" value="✅" class="w-12 px-2 py-2 rounded-xl bg-slate-900 border border-white/15 text-center" /><input id="new-habit-title" placeholder="Nowy nawyk..." class="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" /><button id="btn-add-habit" class="px-4 py-2 rounded-xl accent-btn text-xs font-bold">Dodaj</button></div>' : '') +
+                    '<div class="space-y-2">' +
+                      state.habits.map(h => {
+                        const checked = Boolean(doneMap[h.id]);
+                        return '<div class="flex items-center justify-between p-3 rounded-xl border ' + (checked ? 'accent-badge' : 'bg-white/[0.02] border-white/10') + '">' +
+                          '<button data-toggle-habit="' + h.id + '" class="flex-1 flex items-center gap-3 text-left">' +
+                            '<span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold border ' + (checked ? 'accent-gradient border-transparent text-white' : 'border-white/25 text-transparent') + '">✓</span>' +
+                            '<span>' + (h.icon || '⚡') + '</span>' +
+                            '<span class="text-sm font-semibold ' + (checked ? 'line-through opacity-75' : 'text-white') + '">' + escapeHtml(h.title) + '</span>' +
+                          '</button>' +
+                          (ui.showHabitEditor ? '<button data-del-habit="' + h.id + '" class="px-2 text-rose-400 font-bold">×</button>' : '') +
+                        '</div>';
+                      }).join('') +
+                    '</div>' +
+                  '</div>' +
+
+                  '<div class="glass-card rounded-2xl p-5">' +
+                    '<h3 class="font-bold text-white mb-3">Zadania na ten dzień</h3>' +
+                    '<div class="flex gap-2 mb-3"><input id="new-task-input" placeholder="Wpisz zadanie..." class="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" /><button id="btn-add-task" class="px-4 py-2.5 rounded-xl accent-btn text-xs font-bold">Dodaj</button></div>' +
+                    '<div class="space-y-2">' +
+                      (tasks.length ? tasks.map(t =>
+                        '<div class="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/10">' +
+                          '<button data-toggle-task="' + t.id + '" class="flex-1 flex items-center gap-3 text-left">' +
+                            '<span class="w-5 h-5 rounded flex items-center justify-center text-xs border ' + (t.done ? 'accent-gradient border-transparent text-white' : 'border-white/25 text-transparent') + '">✓</span>' +
+                            '<span class="text-sm ' + (t.done ? 'line-through text-slate-500' : 'text-white') + '">' + escapeHtml(t.title) + '</span>' +
+                          '</button>' +
+                          '<button data-del-task="' + t.id + '" class="text-xs text-slate-500 hover:text-rose-400">Usuń</button>' +
+                        '</div>'
+                      ).join('') : '<div class="text-xs text-slate-500">Brak dodatkowych zadań.</div>') +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+
+                '<div class="lg:col-span-5 space-y-6">' +
+                  '<div class="glass-card rounded-2xl p-5">' +
+                    '<div class="flex justify-between items-center mb-3"><h3 class="font-bold text-white">Przypomnienia cykliczne</h3><button id="btn-open-rule" class="px-3 py-1 rounded-xl text-xs font-bold accent-badge">+ Reguła</button></div>' +
+                    '<div class="space-y-2.5">' +
+                      state.recurringRules.map(r => {
+                        const st = getRuleStatus(r, dKey);
+                        const done = Boolean(state.recurringCompletions[dKey]?.[r.id]);
+                        return '<div class="p-3.5 rounded-xl border ' + (st.isDue ? 'bg-indigo-500/15 border-indigo-400/40' : 'bg-white/[0.02] border-white/10') + ' flex items-center justify-between gap-2">' +
+                          '<div><div class="text-sm font-bold text-white ' + (done ? 'line-through opacity-75' : '') + '">' + (r.icon || '🔁') + ' ' + escapeHtml(r.title) + '</div><div class="text-xs text-slate-400">' + st.label + '</div></div>' +
+                          '<div class="flex gap-1.5"><button data-toggle-rule="' + r.id + '" class="px-2.5 py-1.5 rounded-lg text-xs font-bold ' + (done ? 'accent-btn' : 'bg-white/10 text-white') + '">' + (done ? 'Zrobione ✓' : 'Odhacz') + '</button><button data-del-rule="' + r.id + '" class="px-2 text-slate-500 hover:text-rose-400">×</button></div>' +
+                        '</div>';
+                      }).join('') +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
+        } else if (ui.activeTab === 'journal') {
+          const allEntries = [...(state.journalEntries || [])].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+          const recent7 = allEntries.slice(0, 7);
+          const avgMood = recent7.length ? (recent7.reduce((s, e) => s + (Number(e.mood) || 3), 0) / recent7.length).toFixed(1) : '—';
+          const placeCounts = {};
+          allEntries.forEach(e => {
+            const pl = (e.place || 'Inne').trim();
+            placeCounts[pl] = (placeCounts[pl] || 0) + 1;
+          });
+          const topPlaces = Object.entries(placeCounts).sort((a, b) => b[1] - a[1]).slice(0, 4);
+          const moodLabels = { 5: '5/5 • Spokój i pełna moc', 4: '4/5 • Dobry nastrój', 3: '3/5 • Neutralnie', 2: '2/5 • Obniżona forma', 1: '1/5 • Ciężki dzień' };
+
+          contentHtml =
+            '<div class="space-y-6">' +
+              '<div class="glass-card rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">' +
+                '<div><h2 class="text-xl font-extrabold text-white">🧠 Journal, Miejsce & Statystyki Samopoczucia</h2><p class="text-xs text-slate-400 mt-1">Zapisuj myśli, wieczorną modlitwę lub refleksję, miejsce oraz poziom spokoju i samopoczucia.</p></div>' +
+                '<div class="flex gap-3">' +
+                  '<div class="px-4 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-center"><div class="text-[11px] text-slate-400">Śr. nastrój (ost. 7)</div><div class="text-lg font-extrabold accent-text">' + avgMood + ' / 5</div></div>' +
+                  '<div class="px-4 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-center"><div class="text-[11px] text-slate-400">Liczba wpisów</div><div class="text-lg font-extrabold text-white">' + allEntries.length + '</div></div>' +
+                '</div>' +
+              '</div>' +
+
+              '<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">' +
+                '<div class="lg:col-span-5 glass-card rounded-2xl p-5 space-y-3">' +
+                  '<h3 class="font-bold text-white">Nowy wpis do Journala</h3>' +
+                  '<div><label class="block text-xs text-slate-400 mb-1">Samopoczucie (1–5)</label>' +
+                  '<select id="jr-mood" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-sm text-white">' +
+                    [5, 4, 3, 2, 1].map(n => '<option value="' + n + '" ' + (n === 4 ? 'selected' : '') + '>' + moodLabels[n] + '</option>').join('') +
+                  '</select></div>' +
+                  '<div><label class="block text-xs text-slate-400 mb-1">Miejsce / kontekst</label>' +
+                  '<input id="jr-place" placeholder="Np. Dom, Spacer, Kościół, Uczelnia, Wyjazd..." class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" /></div>' +
+                  '<div><label class="block text-xs text-slate-400 mb-1">Myśli / refleksja / podsumowanie dnia</label>' +
+                  '<textarea id="jr-note" rows="4" placeholder="Co dzisiaj poszło dobrze? Za co jesteś wdzięczny lub co siedzi Ci w głowie?" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-xs text-white"></textarea></div>' +
+                  '<button id="btn-add-jr" class="w-full py-2.5 rounded-xl accent-btn font-bold text-sm">Zapisz wpis w Journalu</button>' +
+                '</div>' +
+
+                '<div class="lg:col-span-7 space-y-4">' +
+                  '<div class="glass-card rounded-2xl p-5">' +
+                    '<h3 class="font-bold text-white mb-3">📊 Statystyki nastroju i najczęstsze miejsca</h3>' +
+                    (recent7.length ? '<div class="flex items-end gap-2 h-24 mb-3 px-2">' + recent7.slice().reverse().map(e => {
+                      const hPct = Math.max(20, Math.round((Number(e.mood || 3) / 5) * 100));
+                      return '<div class="flex-1 flex flex-col items-center gap-1"><div class="w-full rounded-t-lg accent-bar" style="height:' + hPct + '%"></div><span class="text-[10px] text-slate-400">' + formatShortDate(e.date) + '</span></div>';
+                    }).join('') + '</div>' : '') +
+                    (topPlaces.length ? '<div class="flex flex-wrap gap-2">' + topPlaces.map(([pl, cnt]) => '<span class="px-2.5 py-1 rounded-full text-xs bg-white/5 border border-white/10 text-slate-300">📍 ' + escapeHtml(pl) + ' (' + cnt + ')</span>').join('') + '</div>' : '') +
+                  '</div>' +
+
+                  '<div class="glass-card rounded-2xl p-5 space-y-2.5">' +
+                    '<h3 class="font-bold text-white">Historia wpisów</h3>' +
+                    (allEntries.length ? allEntries.map(e =>
+                      '<div class="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 space-y-1.5">' +
+                        '<div class="flex justify-between items-center text-xs">' +
+                          '<div class="flex items-center gap-2"><span class="font-bold accent-text">Nastrój ' + e.mood + '/5</span><span class="px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-200 border border-indigo-400/25">📍 ' + escapeHtml(e.place || 'Brak miejsca') + '</span><span class="text-slate-400">' + formatShortDate(e.date) + ' ' + escapeHtml(e.time || '') + '</span></div>' +
+                          '<button data-del-jr="' + e.id + '" class="text-rose-400">Usuń</button>' +
+                        '</div>' +
+                        '<div class="text-xs text-slate-200 leading-relaxed">' + escapeHtml(e.note) + '</div>' +
+                      '</div>'
+                    ).join('') : '<div class="text-xs text-slate-400">Brak wpisów w Journalu.</div>') +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
+        } else if (ui.activeTab === 'gym') {
+          const analytics = getExerciseAnalytics();
+          const sortedWo = [...(state.workouts || [])].sort((a, b) => b.date.localeCompare(a.date));
+
+          contentHtml =
+            '<div class="space-y-6">' +
+              '<div class="glass-card rounded-2xl p-5"><h2 class="text-xl font-extrabold text-white">🏋️ Siłownia, Rekordy (PR) & Plan Kolejnego Treningu</h2><p class="text-xs text-slate-400 mt-1">Wklej serie z treningu, aby wyliczyć szacowany 1RM i automatyczny plan na kolejną sesję.</p></div>' +
+              '<div class="glass-card rounded-2xl p-5">' +
+                '<h3 class="font-bold text-white mb-4">🏆 Rekordy Życiowe (PR) i sugestie progresji</h3>' +
+                (analytics.length
+                  ? '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">' + analytics.map(ex =>
+                      '<div class="p-4 rounded-2xl border ' + (ex.isRecentPR ? 'bg-amber-500/10 border-amber-400/45' : 'bg-white/[0.02] border-white/10') + '">' +
+                        '<div class="flex justify-between items-start gap-2"><div class="font-bold text-sm text-white">' + escapeHtml(ex.name) + '</div>' + (ex.isRecentPR ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400 text-slate-950">NOWY PR</span>' : '') + '</div>' +
+                        '<div class="mt-3 grid grid-cols-2 gap-2 text-xs">' +
+                          '<div class="p-2 rounded-xl bg-slate-950/60"><div class="text-slate-400">Max roboczy</div><div class="font-extrabold text-white">' + ex.bestWeight + ' kg × ' + ex.bestWeightReps + '</div></div>' +
+                          '<div class="p-2 rounded-xl bg-slate-950/60"><div class="text-slate-400">Szacowany 1RM</div><div class="font-extrabold accent-text">' + ex.best1RM + ' kg</div></div>' +
+                        '</div>' +
+                        '<div class="mt-3 p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-400/25 text-[11px] text-indigo-200"><strong>Następny trening:</strong> ' + escapeHtml(ex.nextPlan) + '</div>' +
+                      '</div>'
+                    ).join('') + '</div>'
+                  : '<div class="text-xs text-slate-400">Brak zapisanych ćwiczeń.</div>') +
+              '</div>' +
+              '<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">' +
+                '<div class="lg:col-span-5 glass-card rounded-2xl p-5 space-y-3">' +
+                  '<h3 class="font-bold text-white">Zapisz trening</h3>' +
+                  '<input id="wo-title" value="Trening Siłowy" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" />' +
+                  '<input id="wo-date" type="date" value="' + TODAY_KEY + '" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs text-white" />' +
+                  '<textarea id="wo-raw" rows="4" placeholder="Wyciskanie na ławce płaskiej: 85kg x 8, 85kg x 7&#10;Wiosłowanie sztangą: 75kg x 10, 80kg x 8" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs text-white"></textarea>' +
+                  '<button id="btn-save-wo" class="w-full py-2.5 rounded-xl accent-btn font-bold text-sm">Zapisz trening</button>' +
+                '</div>' +
+                '<div class="lg:col-span-7 glass-card rounded-2xl p-5 space-y-3">' +
+                  '<h3 class="font-bold text-white">Historia sesji</h3>' +
+                  sortedWo.map(wo =>
+                    '<div class="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 space-y-2">' +
+                      '<div class="flex justify-between"><span class="font-bold text-sm text-white">' + escapeHtml(wo.title) + ' (' + formatShortDate(wo.date) + ')</span><button data-del-wo="' + wo.id + '" class="text-xs text-rose-400">Usuń</button></div>' +
+                      (wo.exercises || []).map(ex => '<div class="text-xs text-slate-300">• <strong>' + escapeHtml(ex.name) + ':</strong> ' + (ex.sets || []).map(s => s.weight + 'kg×' + s.reps).join(', ') + '</div>').join('') +
+                    '</div>'
+                  ).join('') +
+                '</div>' +
+              '</div>' +
+            '</div>';
+        } else if (ui.activeTab === 'calendar') {
+          const base = new Date();
+          base.setDate(1);
+          base.setMonth(base.getMonth() + ui.calMonthOffset);
+          const y = base.getFullYear();
+          const m = base.getMonth();
+          const firstW = (new Date(y, m, 1).getDay() + 6) % 7;
+          const dim = new Date(y, m + 1, 0).getDate();
+          const cells = [];
+          for (let i = 0; i < firstW; i++) cells.push(null);
+          for (let d = 1; d <= dim; d++) cells.push(y + '-' + pad2(m + 1) + '-' + pad2(d));
+
+          contentHtml =
+            '<div class="space-y-6">' +
+              '<div class="glass-card rounded-2xl p-5 flex justify-between items-center">' +
+                '<h2 class="text-xl font-extrabold text-white capitalize">' + base.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' }) + '</h2>' +
+                '<div class="flex gap-2"><button id="cal-prev" class="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs">←</button><button id="cal-next" class="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs">→</button></div>' +
+              '</div>' +
+              '<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">' +
+                '<div class="lg:col-span-8 glass-card rounded-2xl p-5">' +
+                  '<div class="grid grid-cols-7 gap-1.5 text-center text-xs font-bold text-slate-400 mb-2"><div>Pon</div><div>Wt</div><div>Śr</div><div>Czw</div><div>Pt</div><div>Sob</div><div>Ndz</div></div>' +
+                  '<div class="grid grid-cols-7 gap-1.5">' +
+                    cells.map(k => {
+                      if (!k) return '<div class="h-16 rounded-xl bg-white/[0.01]"></div>';
+                      const evs = state.events.filter(ev => ev.recurringYearly ? ev.date.slice(5) === k.slice(5) : ev.date === k);
+                      const rules = state.recurringRules.filter(r => getRuleStatus(r, k).isDue);
+                      return '<button data-cal-day="' + k + '" class="h-16 p-1.5 rounded-xl border text-left flex flex-col justify-between ' + (k === dKey ? 'accent-badge' : 'bg-white/[0.02] border-white/10') + '">' +
+                        '<div class="flex justify-between text-xs font-bold"><span>' + Number(k.slice(-2)) + '</span><span>' + rules.map(r => r.icon || '🔁').join('') + '</span></div>' +
+                        (evs.length ? '<div class="text-[10px] truncate px-1 rounded bg-amber-500/20 text-amber-200">' + escapeHtml(evs[0].title) + '</div>' : '') +
+                      '</button>';
+                    }).join('') +
+                  '</div>' +
+                '</div>' +
+                '<div class="lg:col-span-4 glass-card rounded-2xl p-5 space-y-3">' +
+                  '<h3 class="font-bold text-white">Dodaj wydarzenie</h3>' +
+                  '<input id="ev-title" placeholder="Np. Urodziny" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" />' +
+                  '<input id="ev-date" type="date" value="' + dKey + '" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" />' +
+                  '<label class="flex items-center gap-2 text-xs text-slate-300"><input id="ev-yearly" type="checkbox" checked /> Powtarzaj co roku</label>' +
+                  '<button id="btn-add-ev" class="w-full py-2.5 rounded-xl accent-btn font-bold text-sm">Zapisz</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
+        } else if (ui.activeTab === 'calories') {
+          const items = state.caloriesByDate[dKey] || [];
+          const calc = calculateTargets(state.profile);
+          contentHtml =
+            '<div class="space-y-6">' +
+              '<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">' +
+                '<div class="glass-card rounded-2xl p-4"><div class="text-xs text-slate-400">Kalorie</div><div class="text-xl font-extrabold text-white mt-1">' + calSum.kcal + ' / ' + calGoal + '</div></div>' +
+                '<div class="glass-card rounded-2xl p-4"><div class="text-xs text-indigo-300">Białko</div><div class="text-xl font-extrabold text-white mt-1">' + calSum.protein + ' / ' + state.profile.proteinGoal + ' g</div></div>' +
+                '<div class="glass-card rounded-2xl p-4"><div class="text-xs text-amber-300">Węgle</div><div class="text-xl font-extrabold text-white mt-1">' + calSum.carbs + ' / ' + state.profile.carbsGoal + ' g</div></div>' +
+                '<div class="glass-card rounded-2xl p-4"><div class="text-xs text-cyan-300">Tłuszcze</div><div class="text-xl font-extrabold text-white mt-1">' + calSum.fat + ' / ' + state.profile.fatGoal + ' g</div></div>' +
+              '</div>' +
+              '<div class="glass-card rounded-2xl p-4 flex flex-wrap justify-between items-center gap-3">' +
+                '<div class="text-xs text-slate-300">Kalkulator BMR/TDEE: <strong>' + calc.calorieGoal + ' kcal</strong> (B:' + calc.proteinGoal + 'g W:' + calc.carbsGoal + 'g T:' + calc.fatGoal + 'g)</div>' +
+                '<button id="btn-apply-calc" class="px-3.5 py-2 rounded-xl accent-badge text-xs font-bold">Ustaw jako moje cele</button>' +
+              '</div>' +
+              '<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">' +
+                '<div class="lg:col-span-5 glass-card rounded-2xl p-5 space-y-3">' +
+                  '<h3 class="font-bold text-white">Dodaj posiłek</h3>' +
+                  '<input id="meal-name" placeholder="Nazwa posiłku" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" />' +
+                  '<div class="grid grid-cols-2 gap-2">' +
+                    '<input id="meal-kcal" type="number" placeholder="Kalorie (kcal)" class="px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" />' +
+                    '<input id="meal-p" type="number" placeholder="Białko (g)" class="px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" />' +
+                    '<input id="meal-c" type="number" placeholder="Węgle (g)" class="px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" />' +
+                    '<input id="meal-f" type="number" placeholder="Tłuszcze (g)" class="px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" />' +
+                  '</div>' +
+                  '<button id="btn-add-meal" class="w-full py-2.5 rounded-xl accent-btn font-bold text-sm">Dodaj posiłek</button>' +
+                '</div>' +
+                '<div class="lg:col-span-7 glass-card rounded-2xl p-5 space-y-2">' +
+                  '<h3 class="font-bold text-white mb-2">Dzisiejsze posiłki</h3>' +
+                  (items.length ? items.map(it =>
+                    '<div class="p-3 rounded-xl bg-white/[0.02] border border-white/10 flex justify-between items-center">' +
+                      '<div><div class="text-sm font-bold text-white">' + escapeHtml(it.name) + '</div><div class="text-xs text-slate-400">B:' + it.protein + 'g W:' + it.carbs + 'g T:' + it.fat + 'g</div></div>' +
+                      '<div class="flex items-center gap-3"><span class="font-bold accent-text text-sm">' + it.kcal + ' kcal</span><button data-del-meal="' + it.id + '" class="text-rose-400">×</button></div>' +
+                    '</div>'
+                  ).join('') : '<div class="text-xs text-slate-400">Brak posiłków.</div>') +
+                '</div>' +
+              '</div>' +
+            '</div>';
+        } else if (ui.activeTab === 'sleep') {
+          const sToday = state.sleepByDate[TODAY_KEY] || { hours: 7.5, quality: 'Dobry', energy: 4 };
+          contentHtml =
+            '<div class="glass-card rounded-2xl p-5 max-w-lg space-y-3">' +
+              '<h3 class="font-bold text-white">Sen i poranna energia</h3>' +
+              '<input id="sleep-h" type="number" step="0.5" value="' + sToday.hours + '" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-white font-bold" />' +
+              '<select id="sleep-e" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-white text-sm">' +
+                [5, 4, 3, 2, 1].map(n => '<option value="' + n + '" ' + (Number(sToday.energy || 4) === n ? 'selected' : '') + '>Energia: ' + n + '/5</option>').join('') +
+              '</select>' +
+              '<button id="btn-save-sleep" class="w-full py-2.5 rounded-xl accent-btn font-bold text-sm">Zapisz sen</button>' +
+            '</div>';
+        } else if (ui.activeTab === 'water') {
+          const pct = Math.min(100, Math.round((waterTotal / Math.max(1, waterGoal)) * 100));
+          contentHtml =
+            '<div class="glass-card rounded-2xl p-6 max-w-lg space-y-4 text-center">' +
+              '<div class="text-3xl font-extrabold text-cyan-300">' + waterTotal + ' / ' + waterGoal + ' ml (' + pct + '%)</div>' +
+              '<div class="w-full h-3 rounded-full bg-white/10 overflow-hidden"><div class="h-full accent-bar" style="width:' + pct + '%"></div></div>' +
+              '<div class="grid grid-cols-3 gap-2.5">' +
+                '<button data-add-w="250" class="py-2.5 rounded-xl bg-cyan-500/20 text-cyan-200 font-bold text-xs">+250 ml</button>' +
+                '<button data-add-w="500" class="py-2.5 rounded-xl bg-cyan-500/25 text-cyan-100 font-bold text-xs">+500 ml</button>' +
+                '<button data-add-w="750" class="py-2.5 rounded-xl accent-badge font-bold text-xs">+750 ml</button>' +
+              '</div>' +
+            '</div>';
+        } else if (ui.activeTab === 'weight') {
+          const curW = parseWeightInput(state.profile.currentWeight);
+          const goalW = parseWeightInput(state.profile.goalWeight);
+          contentHtml =
+            '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">' +
+              '<div class="glass-card rounded-2xl p-5 space-y-3">' +
+                '<h3 class="font-bold text-white">Pomiar wagi</h3>' +
+                '<div class="text-sm text-slate-300">Obecnie: <strong class="accent-text">' + formatWeight(curW) + '</strong> • Cel: <strong class="text-indigo-300">' + formatWeight(goalW) + '</strong></div>' +
+                '<input id="w-val" type="text" value="' + curW.toFixed(2) + '" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-white/15 text-xl font-bold text-white" />' +
+                '<button id="btn-save-w" class="w-full py-2.5 rounded-xl accent-btn font-bold text-sm">Zapisz wagę</button>' +
+              '</div>' +
+              '<div class="glass-card rounded-2xl p-5 space-y-2">' +
+                '<h3 class="font-bold text-white">Historia pomiarów</h3>' +
+                state.weightLogs.slice().reverse().map(l => '<div class="flex justify-between text-xs py-2 px-3 rounded-xl bg-white/[0.02]"><span>' + formatShortDate(l.date) + '</span><strong class="accent-text">' + formatWeight(l.weight) + '</strong></div>').join('') +
+              '</div>' +
+            '</div>';
+        }
+
+        const settingsModal = ui.showSettingsModal ?
+          '<div class="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">' +
+            '<div class="glass-card rounded-3xl p-6 max-w-lg w-full space-y-5">' +
+              '<div class="flex justify-between items-center"><h3 class="font-extrabold text-white">Motywy, kolory i profil</h3><button id="btn-close-set" class="text-xl text-slate-400">×</button></div>' +
+              '<div><div class="text-xs font-bold accent-text mb-2">Kolor przewodni</div><div class="grid grid-cols-2 gap-2">' +
+                ACCENT_THEMES.map(t => '<button data-accent="' + t.id + '" class="p-2.5 rounded-xl border text-left text-xs font-bold ' + (state.profile.accentTheme === t.id ? 'accent-badge' : 'border-white/10 text-slate-300') + '">' + t.name + '</button>').join('') +
+              '</div></div>' +
+              '<div><div class="text-xs font-bold text-slate-300 mb-2">Tło</div><div class="grid grid-cols-3 gap-2">' +
+                BG_MODES.map(m => '<button data-bg="' + m.id + '" class="p-2 rounded-xl border text-xs font-bold ' + (state.profile.bgMode === m.id ? 'accent-badge' : 'border-white/10 text-slate-300') + '">' + m.name + '</button>').join('') +
+              '</div></div>' +
+              '<div><div class="text-xs font-bold text-slate-300 mb-2">Awatar</div><div class="grid grid-cols-2 gap-2">' +
+                USER_AVATARS.map(a => '<button data-av="' + a.id + '" class="p-2 rounded-xl border text-xs font-bold ' + (state.profile.userAvatar === a.id ? 'accent-badge' : 'border-white/10 text-slate-300') + '">' + a.icon + ' ' + a.name + '</button>').join('') +
+              '</div></div>' +
+              '<div><div class="text-xs font-bold text-slate-300 mb-2">Widoczne moduły</div><div class="grid grid-cols-2 gap-1.5">' +
+                [
+                  { k: 'journal', l: '🧠 Journal & Mental' },
+                  { k: 'gym', l: '🏋️ Siłownia' },
+                  { k: 'calories', l: '🍽️ Kalorie' },
+                  { k: 'weight', l: '⚖️ Waga' }
+                ].map(m => '<button data-tog-mod="' + m.k + '" class="p-2 rounded-xl border text-left text-xs font-bold ' + (mods[m.k] !== false ? 'accent-badge' : 'border-white/10 text-slate-400') + '">' + m.l + '</button>').join('') +
+              '</div></div>' +
+              '<button id="btn-reopen-ob" class="text-xs text-amber-400 underline">Otwórz ponownie kreator profilu</button>' +
+            '</div>' +
+          '</div>' : '';
+
+        const ruleModal = ui.showRuleModal ?
+          '<div class="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">' +
+            '<div class="glass-card rounded-3xl p-6 max-w-md w-full space-y-3">' +
+              '<div class="flex justify-between"><h3 class="font-bold text-white">Nowe przypomnienie</h3><button id="btn-close-rule" class="text-xl text-slate-400">×</button></div>' +
+              '<input id="r-title" placeholder="Np. Siłownia" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" />' +
+              '<select id="r-type" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-white/15 text-sm text-white"><option value="every_n_days">Co X dni</option><option value="monthly_day">Konkretny dzień miesiąca</option></select>' +
+              '<input id="r-num" type="number" value="3" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-white/15 text-sm text-white" />' +
+              '<button id="btn-save-rule" class="w-full py-2.5 rounded-xl accent-btn font-bold text-sm">Zapisz</button>' +
+            '</div>' +
+          '</div>' : '';
+
+        const eveningModal = ui.showEveningModal ?
+          '<div class="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">' +
+            '<div class="glass-card rounded-3xl p-6 max-w-md w-full space-y-4">' +
+              '<div class="flex justify-between"><h3 class="font-bold text-white">🌙 Podgląd wieczorny</h3><button id="btn-close-ev" class="text-xl text-slate-400">×</button></div>' +
+              '<div class="text-xs text-slate-300">Woda dzisiaj: <strong>' + getWaterTotal(TODAY_KEY) + ' / ' + getEffectiveWaterGoal(TODAY_KEY) + ' ml</strong></div>' +
+              '<div class="text-xs text-slate-300">Jutro: <strong>' + (isTrainingDay(addDays(TODAY_KEY, 1)) ? '🏋️ Dzień treningowy!' : '🔋 Dzień nietreningowy') + '</strong></div>' +
+            '</div>' +
+          '</div>' : '';
+
+        const aiDrawer = ui.aiOpen ?
+          '<div class="fixed inset-y-0 right-0 z-40 w-full max-w-md glass-card border-l border-white/10 flex flex-col">' +
+            '<div class="p-4 border-b border-white/10 flex justify-between items-center"><span class="font-bold text-white">🤖 Asystent AI</span><button id="btn-close-ai" class="text-slate-400">✕</button></div>' +
+            '<div class="flex-1 overflow-y-auto p-4 space-y-3">' +
+              state.aiMessages.map(m =>
+                '<div class="p-3 rounded-2xl text-xs ' + (m.role === 'user' ? 'accent-badge ml-8' : 'bg-white/[0.04] text-slate-200 mr-8') + '">' +
+                  '<div>' + escapeHtml(m.text) + '</div>' +
+                  (m.applied && m.applied.length ? '<div class="mt-1.5 pt-1.5 border-t border-white/10 accent-text font-bold">' + m.applied.map(a => '✓ ' + escapeHtml(a)).join('<br>') + '</div>' : '') +
+                '</div>'
+              ).join('') +
+            '</div>' +
+            '<div class="p-3 border-t border-white/10 flex gap-2"><input id="ai-inp" value="' + escapeAttr(ui.aiDraft) + '" placeholder="Wpisz co zrobiłeś lub podniosłeś..." class="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs text-white" /><button id="btn-ai-send" class="px-4 py-2 rounded-xl accent-btn text-xs font-bold">Wyślij</button></div>' +
+          '</div>' : '';
+
+        document.getElementById('app').innerHTML =
+          '<div class="min-h-screen flex flex-col lg:flex-row">' +
+            '<aside class="lg:w-64 shrink-0 border-b lg:border-r border-white/10 bg-slate-950/60 p-4 flex flex-col justify-between gap-4">' +
+              '<div class="space-y-4">' +
+                '<div class="flex justify-between items-center"><span class="font-extrabold text-lg text-white">YouVsYou</span><button id="btn-open-set" class="p-2 rounded-xl bg-white/5 text-xs">🎨</button></div>' +
+                '<div class="p-3 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center gap-2.5">' +
+                  '<span class="text-2xl">' + userAv.icon + '</span>' +
+                  '<div><div class="text-sm font-bold text-white">' + escapeHtml(state.profile.name) + '</div><div class="text-[11px] accent-text font-semibold">' + (mods.weight !== false ? (formatWeight(state.profile.currentWeight) + ' → ' + formatWeight(state.profile.goalWeight)) : 'Tryb Mental & Dyscyplina') + '</div></div>' +
+                '</div>' +
+                '<nav class="flex lg:flex-col gap-1.5 overflow-x-auto">' +
+                  nav.map(n => '<button data-tab="' + n.id + '" class="px-3.5 py-2.5 rounded-xl flex items-center gap-2.5 text-sm font-semibold whitespace-nowrap ' + (ui.activeTab === n.id ? 'accent-badge' : 'text-slate-400 hover:text-white') + '"><span>' + n.icon + '</span><span>' + n.label + '</span></button>').join('') +
+                '</nav>' +
+              '</div>' +
+              '<button id="btn-open-ai" class="w-full p-3 rounded-2xl accent-badge text-xs font-extrabold text-left">🤖 Asystent AI • Wpisz zdaniami</button>' +
+            '</aside>' +
+            '<main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto">' + contentHtml + '</main>' +
+          '</div>' +
+          settingsModal + ruleModal + eveningModal + aiDrawer;
+
+        document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { ui.activeTab = b.getAttribute('data-tab'); render(); }));
+        document.querySelectorAll('[data-day]').forEach(b => b.addEventListener('click', () => {
+          const v = b.getAttribute('data-day');
+          ui.selectedDate = v === 'today' ? TODAY_KEY : addDays(ui.selectedDate, Number(v));
+          render();
+        }));
+        document.getElementById('btn-habit-edit')?.addEventListener('click', () => { ui.showHabitEditor = !ui.showHabitEditor; render(); });
+        document.getElementById('btn-add-habit')?.addEventListener('click', () => {
+          const t = (document.getElementById('new-habit-title')?.value || '').trim();
+          if (!t) return;
+          state.habits.push({ id: 'h_' + Date.now(), title: t, icon: (document.getElementById('new-habit-icon')?.value || '✅').trim() || '✅' });
+          saveState();
+          render();
+        });
+        document.querySelectorAll('[data-toggle-habit]').forEach(b => b.addEventListener('click', () => {
+          const id = b.getAttribute('data-toggle-habit');
+          if (!state.habitCompletions[dKey]) state.habitCompletions[dKey] = {};
+          state.habitCompletions[dKey][id] = !state.habitCompletions[dKey][id];
+          saveState();
+          render();
+        }));
+        document.querySelectorAll('[data-del-habit]').forEach(b => b.addEventListener('click', () => {
+          state.habits = state.habits.filter(h => h.id !== b.getAttribute('data-del-habit'));
+          saveState();
+          render();
+        }));
+        document.getElementById('btn-add-task')?.addEventListener('click', () => {
+          const t = (document.getElementById('new-task-input')?.value || '').trim();
+          if (!t) return;
+          if (!state.tasksByDate[dKey]) state.tasksByDate[dKey] = [];
+          state.tasksByDate[dKey].push({ id: 'tsk_' + Date.now(), title: t, done: false });
+          saveState();
+          render();
+        });
+        document.querySelectorAll('[data-toggle-task]').forEach(b => b.addEventListener('click', () => {
+          const item = (state.tasksByDate[dKey] || []).find(t => t.id === b.getAttribute('data-toggle-task'));
+          if (item) { item.done = !item.done; saveState(); render(); }
+        }));
+        document.querySelectorAll('[data-del-task]').forEach(b => b.addEventListener('click', () => {
+          state.tasksByDate[dKey] = (state.tasksByDate[dKey] || []).filter(t => t.id !== b.getAttribute('data-del-task'));
+          saveState();
+          render();
+        }));
+        document.querySelectorAll('[data-toggle-rule]').forEach(b => b.addEventListener('click', () => {
+          const id = b.getAttribute('data-toggle-rule');
+          if (!state.recurringCompletions[dKey]) state.recurringCompletions[dKey] = {};
+          state.recurringCompletions[dKey][id] = !state.recurringCompletions[dKey][id];
+          saveState();
+          render();
+        }));
+        document.querySelectorAll('[data-del-rule]').forEach(b => b.addEventListener('click', () => {
+          state.recurringRules = state.recurringRules.filter(r => r.id !== b.getAttribute('data-del-rule'));
+          saveState();
+          render();
+        }));
+        document.getElementById('btn-open-rule')?.addEventListener('click', () => { ui.showRuleModal = true; render(); });
+        document.getElementById('btn-close-rule')?.addEventListener('click', () => { ui.showRuleModal = false; render(); });
+        document.getElementById('btn-save-rule')?.addEventListener('click', () => {
+          const title = (document.getElementById('r-title')?.value || '').trim();
+          if (!title) return;
+          const type = document.getElementById('r-type')?.value || 'every_n_days';
+          const num = Math.max(1, Number(document.getElementById('r-num')?.value) || 3);
+          state.recurringRules.push({ id: 'r_' + Date.now(), title, icon: '🔁', type, intervalDays: num, dayOfMonth: Math.min(28, num), anchorDate: dKey });
+          ui.showRuleModal = false;
+          saveState();
+          render();
+        });
+        document.getElementById('btn-save-wo')?.addEventListener('click', () => {
+          const exs = parseWorkoutText(document.getElementById('wo-raw')?.value || '');
+          if (!exs.length) return;
+          state.workouts.push({
+            id: 'wo_' + Date.now(),
+            date: document.getElementById('wo-date')?.value || TODAY_KEY,
+            title: (document.getElementById('wo-title')?.value || 'Trening').trim(),
+            exercises: exs
+          });
+          saveState();
+          render();
+        });
+        document.querySelectorAll('[data-del-wo]').forEach(b => b.addEventListener('click', () => {
+          state.workouts = state.workouts.filter(w => w.id !== b.getAttribute('data-del-wo'));
+          saveState();
+          render();
+        }));
+        document.getElementById('cal-prev')?.addEventListener('click', () => { ui.calMonthOffset--; render(); });
+        document.getElementById('cal-next')?.addEventListener('click', () => { ui.calMonthOffset++; render(); });
+        document.querySelectorAll('[data-cal-day]').forEach(b => b.addEventListener('click', () => { ui.selectedDate = b.getAttribute('data-cal-day'); render(); }));
+        document.getElementById('btn-add-ev')?.addEventListener('click', () => {
+          const t = (document.getElementById('ev-title')?.value || '').trim();
+          const dt = document.getElementById('ev-date')?.value || dKey;
+          if (!t) return;
+          state.events.push({ id: 'ev_' + Date.now(), title: t, date: dt, recurringYearly: Boolean(document.getElementById('ev-yearly')?.checked) });
+          saveState();
+          render();
+        });
+        document.getElementById('btn-apply-calc')?.addEventListener('click', () => {
+          const c = calculateTargets(state.profile);
+          state.profile.calorieGoal = c.calorieGoal;
+          state.profile.proteinGoal = c.proteinGoal;
+          state.profile.carbsGoal = c.carbsGoal;
+          state.profile.fatGoal = c.fatGoal;
+          state.profile.waterGoalMl = c.waterGoalMl;
+          saveState();
+          render();
+        });
+        document.getElementById('btn-add-meal')?.addEventListener('click', () => {
+          addMeal(
+            dKey,
+            document.getElementById('meal-name')?.value || 'Posiłek',
+            document.getElementById('meal-kcal')?.value,
+            document.getElementById('meal-p')?.value,
+            document.getElementById('meal-c')?.value,
+            document.getElementById('meal-f')?.value
+          );
+          render();
+        });
+        document.querySelectorAll('[data-del-meal]').forEach(b => b.addEventListener('click', () => {
+          state.caloriesByDate[dKey] = (state.caloriesByDate[dKey] || []).filter(m => m.id !== b.getAttribute('data-del-meal'));
+          saveState();
+          render();
+        }));
+        document.getElementById('btn-save-sleep')?.addEventListener('click', () => {
+          state.sleepByDate[TODAY_KEY] = {
+            hours: Number(document.getElementById('sleep-h')?.value) || 7.5,
+            quality: 'Dobry',
+            energy: Number(document.getElementById('sleep-e')?.value) || 4
+          };
+          saveState();
+          render();
+        });
+        document.querySelectorAll('[data-add-w]').forEach(b => b.addEventListener('click', () => {
+          addWater(TODAY_KEY, Number(b.getAttribute('data-add-w')), 'Przycisk');
+          render();
+        }));
+        document.getElementById('btn-save-w')?.addEventListener('click', () => {
+          addWeight(TODAY_KEY, document.getElementById('w-val')?.value);
+          render();
+        });
+        document.getElementById('btn-open-set')?.addEventListener('click', () => { ui.showSettingsModal = true; render(); });
+        document.getElementById('btn-close-set')?.addEventListener('click', () => { ui.showSettingsModal = false; render(); });
+        document.querySelectorAll('[data-accent]').forEach(b => b.addEventListener('click', () => { state.profile.accentTheme = b.getAttribute('data-accent'); saveState(); render(); }));
+        document.querySelectorAll('[data-bg]').forEach(b => b.addEventListener('click', () => { state.profile.bgMode = b.getAttribute('data-bg'); saveState(); render(); }));
+        document.querySelectorAll('[data-av]').forEach(b => b.addEventListener('click', () => { state.profile.userAvatar = b.getAttribute('data-av'); saveState(); render(); }));
+        document.querySelectorAll('[data-tog-mod]').forEach(b => b.addEventListener('click', () => {
+          const k = b.getAttribute('data-tog-mod');
+          if (!state.profile.enabledModules) state.profile.enabledModules = { gym: true, calories: true, journal: true, sleep: true, water: true, weight: true, calendar: true };
+          state.profile.enabledModules[k] = state.profile.enabledModules[k] === false ? true : false;
+          saveState();
+          render();
+        }));
+        document.getElementById('btn-add-jr')?.addEventListener('click', () => {
+          const note = (document.getElementById('jr-note')?.value || '').trim();
+          const place = (document.getElementById('jr-place')?.value || '').trim() || 'Dom';
+          const mood = Number(document.getElementById('jr-mood')?.value) || 4;
+          if (!note) return;
+          if (!state.journalEntries) state.journalEntries = [];
+          const now = new Date();
+          state.journalEntries.push({
+            id: 'jr_' + Date.now(),
+            date: dKey,
+            time: pad2(now.getHours()) + ':' + pad2(now.getMinutes()),
+            mood,
+            place,
+            note
+          });
+          saveState();
+          render();
+        });
+        document.querySelectorAll('[data-del-jr]').forEach(b => b.addEventListener('click', () => {
+          state.journalEntries = (state.journalEntries || []).filter(e => e.id !== b.getAttribute('data-del-jr'));
+          saveState();
+          render();
+        }));
+        document.getElementById('btn-reopen-ob')?.addEventListener('click', () => { ui.showSettingsModal = false; ui.onboardingStep = 0; ui.tempProfile = { ...state.profile }; state.onboardingCompleted = false; saveState(); render(); });
+        document.getElementById('btn-evening')?.addEventListener('click', () => { ui.showEveningModal = true; render(); });
+        document.getElementById('btn-close-ev')?.addEventListener('click', () => { ui.showEveningModal = false; render(); });
+        document.getElementById('btn-open-ai')?.addEventListener('click', () => { ui.aiOpen = true; render(); });
+        document.getElementById('btn-close-ai')?.addEventListener('click', () => { ui.aiOpen = false; render(); });
+        document.getElementById('btn-ai-send')?.addEventListener('click', () => processAiInput(document.getElementById('ai-inp')?.value));
+        document.getElementById('ai-inp')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); processAiInput(e.target.value); } });
+      }
+
+      window.render = render;
+      render();
+    })();
+  </script>
+</body>
+</html>
